@@ -16,7 +16,38 @@ async function loadFiles() {
 
   files.forEach((file) => {
     const listItem = document.createElement("li");
-    listItem.textContent = file.name;
+
+    const fileName = document.createElement("span");
+    fileName.textContent = file.name;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.className = "delete-button";
+
+    deleteButton.addEventListener("click", async () => {
+      const confirmDelete = confirm(`Delete ${file.name}?`);
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      const response = await fetch(`/api/media/${encodeURIComponent(file.name)}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        uploadMessage.textContent = result.error || "Delete failed.";
+        return;
+      }
+
+      uploadMessage.textContent = `Deleted: ${result.file}`;
+      await loadFiles();
+    });
+
+    listItem.appendChild(fileName);
+    listItem.appendChild(deleteButton);
     fileList.appendChild(listItem);
   });
 }

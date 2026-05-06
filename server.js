@@ -8,12 +8,10 @@ const PORT = 3000;
 
 const uploadsDir = path.join(__dirname, "uploads");
 
-// Create uploads folder if it does not exist
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-// Configure multer file storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -24,7 +22,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Allow only basic MVP formats
 const allowedTypes = [".jpg", ".jpeg", ".png", ".mp4"];
 
 const upload = multer({
@@ -40,13 +37,9 @@ const upload = multer({
   },
 });
 
-// Serve frontend files
 app.use(express.static(path.join(__dirname, "public")));
-
-// Serve uploaded media files
 app.use("/uploads", express.static(uploadsDir));
 
-// Health check route
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
@@ -54,7 +47,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Get uploaded media list
 app.get("/api/media", (req, res) => {
   const files = fs.readdirSync(uploadsDir).map((file) => {
     return {
@@ -67,7 +59,6 @@ app.get("/api/media", (req, res) => {
   res.json(files);
 });
 
-// Upload one media file
 app.post("/api/upload", upload.single("media"), (req, res) => {
   res.json({
     message: "File uploaded successfully",
@@ -75,14 +66,31 @@ app.post("/api/upload", upload.single("media"), (req, res) => {
   });
 });
 
-// Error handler for upload errors
+app.delete("/api/media/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const safeFilename = path.basename(filename);
+  const filePath = path.join(uploadsDir, safeFilename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      error: "File not found",
+    });
+  }
+
+  fs.unlinkSync(filePath);
+
+  res.json({
+    message: "File deleted successfully",
+    file: safeFilename,
+  });
+});
+
 app.use((err, req, res, next) => {
   res.status(400).json({
     error: err.message,
   });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`A3 Info Screen server running at http://localhost:${PORT}`);
 });
