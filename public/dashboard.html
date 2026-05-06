@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A3 Info Screen Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="dashboard">
+    <h1>A3 Info Screen Dashboard</h1>
+    <p>Upload media files to be shown on the A3 hallway screen.</p>
+
+    <section class="upload-box">
+      <h2>Upload media</h2>
+
+      <form id="uploadForm">
+        <input 
+          type="file" 
+          id="mediaFile" 
+          name="media" 
+          accept=".jpg,.jpeg,.png,.mp4" 
+          required 
+        />
+        <button type="submit">Upload</button>
+      </form>
+
+      <p id="uploadMessage"></p>
+    </section>
+
+    <section class="file-list-box">
+      <h2>Uploaded files</h2>
+      <ul id="fileList">
+        <li>No files loaded yet.</li>
+      </ul>
+    </section>
+
+    <p class="dashboard-link">
+      <a href="/">Open slideshow screen</a>
+    </p>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
