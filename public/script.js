@@ -4,7 +4,7 @@ let mediaFiles = [];
 let currentIndex = 0;
 let imageTimer = null;
 
-const imageDuration = 10000; // 10 seconds
+const imageDuration = 10000; 
 
 function updateClock() {
   const clockElement = document.getElementById("clock");
@@ -39,13 +39,13 @@ async function loadMediaFiles(firstLoad = false) {
       return;
     }
 
-    // Only start from the beginning when the page first loads
+    
     if (firstLoad) {
       currentIndex = 0;
       showCurrentMedia();
     }
 
-    // If current index is outside the new list, reset safely
+    
     if (currentIndex >= mediaFiles.length) {
       currentIndex = 0;
     }
