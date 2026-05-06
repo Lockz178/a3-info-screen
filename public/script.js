@@ -115,7 +115,7 @@ function showNextMedia() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// First load starts the slideshow
+
 loadMediaFiles(true);
 
 // Later checks for new uploaded files without restarting the slideshow
