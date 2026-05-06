@@ -1,17 +1,17 @@
 {
   "name": "a3-info-screen",
   "version": "1.0.0",
-  "description": "This repository contains the project work for the A3 Info Screen project in Practical Training 2, summer 2026.",
-  "main": "index.js",
+  "description": "A Raspberry Pi-powered information screen system for the A3 corridor.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "https://gitlab.tamk.cloud/Lockz178/a3-info-screen.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Team 4",
   "license": "ISC",
   "dependencies": {
     "express": "^5.2.1",
