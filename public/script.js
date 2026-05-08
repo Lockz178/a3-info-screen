@@ -118,7 +118,7 @@ setInterval(updateClock, 1000);
 
 loadMediaFiles(true);
 
-// Later checks for new uploaded files without restarting the slideshow
+
 setInterval(() => {
   loadMediaFiles(false);
 }, 30000);
