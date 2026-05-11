@@ -7,6 +7,7 @@ const app = express();
 const PORT = 3000;
 
 const uploadsDir = path.join(__dirname, "uploads");
+const configPath = path.join(__dirname, "config.json");
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -45,6 +46,18 @@ app.get("/health", (req, res) => {
     status: "OK",
     message: "A3 Info Screen server is running",
   });
+});
+
+app.get("/api/config", (req, res) => {
+  if (!fs.existsSync(configPath)) {
+    return res.json({
+      imageDurationSeconds: 10,
+    });
+  }
+
+  const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+
+  res.json(config);
 });
 
 app.get("/api/media", (req, res) => {

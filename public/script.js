@@ -3,8 +3,7 @@ const mediaArea = document.getElementById("mediaArea");
 let mediaFiles = [];
 let currentIndex = 0;
 let imageTimer = null;
-
-const imageDuration = 10000; 
+let imageDuration = 10000;
 
 function updateClock() {
   const clockElement = document.getElementById("clock");
@@ -27,6 +26,19 @@ function updateClock() {
   clockElement.textContent = `${dateText} · ${timeText}`;
 }
 
+async function loadConfig() {
+  try {
+    const response = await fetch("/api/config");
+    const config = await response.json();
+
+    if (config.imageDurationSeconds) {
+      imageDuration = config.imageDurationSeconds * 1000;
+    }
+  } catch (error) {
+    imageDuration = 10000;
+  }
+}
+
 async function loadMediaFiles(firstLoad = false) {
   try {
     const response = await fetch("/api/media");
@@ -39,13 +51,11 @@ async function loadMediaFiles(firstLoad = false) {
       return;
     }
 
-    
     if (firstLoad) {
       currentIndex = 0;
       showCurrentMedia();
     }
 
-    
     if (currentIndex >= mediaFiles.length) {
       currentIndex = 0;
     }
@@ -112,13 +122,17 @@ function showNextMedia() {
   showCurrentMedia();
 }
 
+async function startSlideshow() {
+  await loadConfig();
+  await loadMediaFiles(true);
+}
+
 updateClock();
 setInterval(updateClock, 1000);
 
-
-loadMediaFiles(true);
-
+startSlideshow();
 
 setInterval(() => {
+  loadConfig();
   loadMediaFiles(false);
 }, 30000);
