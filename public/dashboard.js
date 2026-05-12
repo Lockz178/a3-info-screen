@@ -2,7 +2,7 @@ const uploadForm = document.getElementById("uploadForm");
 const mediaFileInput = document.getElementById("mediaFile");
 const uploadMessage = document.getElementById("uploadMessage");
 const fileList = document.getElementById("fileList");
-const refreshInterval = 10000;
+const refreshInterval = 5000;
 
 async function loadFiles() {
   try {

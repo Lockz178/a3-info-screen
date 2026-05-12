@@ -4,7 +4,7 @@ let mediaFiles = [];
 let currentIndex = 0;
 let imageTimer = null;
 let imageDuration = 10000;
-const refreshInterval = 10000;
+const refreshInterval = 5000;
 
 function updateClock() {
   const clockElement = document.getElementById("clock");
