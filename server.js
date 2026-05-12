@@ -5,6 +5,7 @@ const fs = require("fs");
 
 const app = express();
 const PORT = 3000;
+const HOST = "0.0.0.0";
 
 const uploadsDir = path.join(__dirname, "uploads");
 const configPath = path.join(__dirname, "config.json");
@@ -104,6 +105,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`A3 Info Screen server running at http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`A3 Info Screen server running at http://${HOST}:${PORT}`);
 });
