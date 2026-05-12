@@ -2,54 +2,59 @@ const uploadForm = document.getElementById("uploadForm");
 const mediaFileInput = document.getElementById("mediaFile");
 const uploadMessage = document.getElementById("uploadMessage");
 const fileList = document.getElementById("fileList");
+const refreshInterval = 10000;
 
 async function loadFiles() {
-  const response = await fetch("/api/media");
-  const files = await response.json();
+  try {
+    const response = await fetch("/api/media");
+    const files = await response.json();
 
-  fileList.innerHTML = "";
+    fileList.innerHTML = "";
 
-  if (files.length === 0) {
-    fileList.innerHTML = "<li>No files uploaded yet.</li>";
-    return;
-  }
+    if (files.length === 0) {
+      fileList.innerHTML = "<li>No files uploaded yet.</li>";
+      return;
+    }
 
-  files.forEach((file) => {
-    const listItem = document.createElement("li");
+    files.forEach((file) => {
+      const listItem = document.createElement("li");
 
-    const fileName = document.createElement("span");
-    fileName.textContent = file.name;
+      const fileName = document.createElement("span");
+      fileName.textContent = file.name;
 
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
-    deleteButton.className = "delete-button";
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.className = "delete-button";
 
-    deleteButton.addEventListener("click", async () => {
-      const confirmDelete = confirm(`Delete ${file.name}?`);
+      deleteButton.addEventListener("click", async () => {
+        const confirmDelete = confirm(`Delete ${file.name}?`);
 
-      if (!confirmDelete) {
-        return;
-      }
+        if (!confirmDelete) {
+          return;
+        }
 
-      const response = await fetch(`/api/media/${encodeURIComponent(file.name)}`, {
-        method: "DELETE",
+        const response = await fetch(`/api/media/${encodeURIComponent(file.name)}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          uploadMessage.textContent = result.error || "Delete failed.";
+          return;
+        }
+
+        uploadMessage.textContent = `Deleted: ${result.file}`;
+        await loadFiles();
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        uploadMessage.textContent = result.error || "Delete failed.";
-        return;
-      }
-
-      uploadMessage.textContent = `Deleted: ${result.file}`;
-      await loadFiles();
+      listItem.appendChild(fileName);
+      listItem.appendChild(deleteButton);
+      fileList.appendChild(listItem);
     });
-
-    listItem.appendChild(fileName);
-    listItem.appendChild(deleteButton);
-    fileList.appendChild(listItem);
-  });
+  } catch (error) {
+    fileList.innerHTML = "<li>Could not load files.</li>";
+  }
 }
 
 uploadForm.addEventListener("submit", async (event) => {
@@ -89,3 +94,4 @@ uploadForm.addEventListener("submit", async (event) => {
 });
 
 loadFiles();
+setInterval(loadFiles, refreshInterval);

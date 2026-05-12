@@ -4,6 +4,7 @@ let mediaFiles = [];
 let currentIndex = 0;
 let imageTimer = null;
 let imageDuration = 10000;
+const refreshInterval = 10000;
 
 function updateClock() {
   const clockElement = document.getElementById("clock");
@@ -51,13 +52,13 @@ async function loadMediaFiles(firstLoad = false) {
       return;
     }
 
+    if (currentIndex >= mediaFiles.length) {
+      currentIndex = 0;
+    }
+
     if (firstLoad) {
       currentIndex = 0;
       showCurrentMedia();
-    }
-
-    if (currentIndex >= mediaFiles.length) {
-      currentIndex = 0;
     }
   } catch (error) {
     mediaArea.innerHTML = `
@@ -135,4 +136,4 @@ startSlideshow();
 setInterval(() => {
   loadConfig();
   loadMediaFiles(false);
-}, 30000);
+}, refreshInterval);
