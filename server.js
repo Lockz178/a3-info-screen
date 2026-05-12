@@ -62,13 +62,15 @@ app.get("/api/config", (req, res) => {
 });
 
 app.get("/api/media", (req, res) => {
-  const files = fs.readdirSync(uploadsDir).map((file) => {
-    return {
-      name: file,
-      url: `/uploads/${file}`,
-      type: path.extname(file).toLowerCase(),
-    };
-  });
+  const files = fs.readdirSync(uploadsDir)
+    .sort()
+    .map((file) => {
+      return {
+        name: file,
+        url: `/uploads/${file}`,
+        type: path.extname(file).toLowerCase(),
+      };
+    });
 
   res.json(files);
 });
