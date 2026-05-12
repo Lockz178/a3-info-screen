@@ -3,6 +3,11 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+/*
+  Backend server setup.
+  The server runs on port 3000. HOST 0.0.0.0 allows other devices on the same
+  network to open the dashboard while the Raspberry Pi runs the app.
+*/
 const app = express();
 const PORT = 3000;
 const HOST = "0.0.0.0";
@@ -10,10 +15,18 @@ const HOST = "0.0.0.0";
 const uploadsDir = path.join(__dirname, "uploads");
 const configPath = path.join(__dirname, "config.json");
 
+/*
+  The uploads folder stores media files uploaded from the dashboard.
+  If the folder does not exist, the server creates it automatically.
+*/
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
+/*
+  Multer handles file uploads.
+  Uploaded files are saved with a timestamp in the filename so upload order is clear.
+*/
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -24,6 +37,10 @@ const storage = multer.diskStorage({
   },
 });
 
+/*
+  Basic MVP file validation.
+  The first version supports common image formats and MP4 videos.
+*/
 const allowedTypes = [".jpg", ".jpeg", ".png", ".mp4"];
 
 const upload = multer({
@@ -49,6 +66,10 @@ app.get("/health", (req, res) => {
   });
 });
 
+/*
+  Sends slideshow settings to the frontend.
+  The image duration is read from config.json so it can be changed without editing slideshow code.
+*/
 app.get("/api/config", (req, res) => {
   if (!fs.existsSync(configPath)) {
     return res.json({
@@ -61,6 +82,10 @@ app.get("/api/config", (req, res) => {
   res.json(config);
 });
 
+/*
+  Sends the uploaded media list to the slideshow and dashboard.
+  Files are sorted so the slideshow shows media from oldest upload to newest upload.
+*/
 app.get("/api/media", (req, res) => {
   const files = fs.readdirSync(uploadsDir)
     .sort()
@@ -75,6 +100,9 @@ app.get("/api/media", (req, res) => {
   res.json(files);
 });
 
+/*
+  Receives one uploaded media file from the dashboard and saves it to the uploads folder.
+*/
 app.post("/api/upload", upload.single("media"), (req, res) => {
   res.json({
     message: "File uploaded successfully",
@@ -82,6 +110,10 @@ app.post("/api/upload", upload.single("media"), (req, res) => {
   });
 });
 
+/*
+  Deletes one uploaded media file.
+  This lets users remove old or incorrect content from the dashboard.
+*/
 app.delete("/api/media/:filename", (req, res) => {
   const filename = req.params.filename;
   const safeFilename = path.basename(filename);
@@ -101,6 +133,9 @@ app.delete("/api/media/:filename", (req, res) => {
   });
 });
 
+/*
+  Handles upload errors and sends a clear message back to the dashboard.
+*/
 app.use((err, req, res, next) => {
   res.status(400).json({
     error: err.message,

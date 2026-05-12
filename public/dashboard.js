@@ -1,9 +1,17 @@
+/*
+  Dashboard frontend logic.
+  This file controls media upload, media listing, and delete actions.
+*/
 const uploadForm = document.getElementById("uploadForm");
 const mediaFileInput = document.getElementById("mediaFile");
 const uploadMessage = document.getElementById("uploadMessage");
 const fileList = document.getElementById("fileList");
 const refreshInterval = 5000;
 
+/*
+  Loads uploaded files from the backend and displays them in the dashboard.
+  This makes the dashboard show the same media list that the slideshow uses.
+*/
 async function loadFiles() {
   try {
     const response = await fetch("/api/media");
@@ -26,6 +34,9 @@ async function loadFiles() {
       deleteButton.textContent = "Delete";
       deleteButton.className = "delete-button";
 
+      /*
+        Sends a delete request to the backend when the user removes a media file.
+      */
       deleteButton.addEventListener("click", async () => {
         const confirmDelete = confirm(`Delete ${file.name}?`);
 
@@ -57,6 +68,10 @@ async function loadFiles() {
   }
 }
 
+/*
+  Sends the selected file to the backend when the user uploads media.
+  The backend saves the file and the dashboard reloads the media list.
+*/
 uploadForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -94,4 +109,9 @@ uploadForm.addEventListener("submit", async (event) => {
 });
 
 loadFiles();
+
+/*
+  Refreshes the dashboard file list automatically.
+  This helps multiple devices stay updated when files are uploaded or deleted.
+*/
 setInterval(loadFiles, refreshInterval);

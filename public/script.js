@@ -1,3 +1,7 @@
+/*
+  Slideshow frontend logic.
+  This file controls what is shown on the A3 info screen.
+*/
 const mediaArea = document.getElementById("mediaArea");
 
 let mediaFiles = [];
@@ -6,6 +10,9 @@ let imageTimer = null;
 let imageDuration = 10000;
 const refreshInterval = 5000;
 
+/*
+  Updates the clock shown at the bottom of the slideshow screen.
+*/
 function updateClock() {
   const clockElement = document.getElementById("clock");
 
@@ -27,6 +34,10 @@ function updateClock() {
   clockElement.textContent = `${dateText} · ${timeText}`;
 }
 
+/*
+  Loads slideshow settings from the backend.
+  This makes image duration configurable through config.json.
+*/
 async function loadConfig() {
   try {
     const response = await fetch("/api/config");
@@ -40,6 +51,10 @@ async function loadConfig() {
   }
 }
 
+/*
+  Loads the uploaded media list from the backend.
+  The slideshow uses this list to decide which image or video to show.
+*/
 async function loadMediaFiles(firstLoad = false) {
   try {
     const response = await fetch("/api/media");
@@ -70,6 +85,9 @@ async function loadMediaFiles(firstLoad = false) {
   }
 }
 
+/*
+  Shows a default message when no media has been uploaded yet.
+*/
 function showPlaceholder() {
   clearTimeout(imageTimer);
 
@@ -82,6 +100,11 @@ function showPlaceholder() {
   `;
 }
 
+/*
+  Displays the current media item.
+  Images stay on screen for the configured duration.
+  Videos play until they finish.
+*/
 function showCurrentMedia() {
   clearTimeout(imageTimer);
 
@@ -118,11 +141,17 @@ function showCurrentMedia() {
   }
 }
 
+/*
+  Moves the slideshow to the next uploaded media item.
+*/
 function showNextMedia() {
   currentIndex = (currentIndex + 1) % mediaFiles.length;
   showCurrentMedia();
 }
 
+/*
+  Starts the slideshow by loading settings first and then loading media files.
+*/
 async function startSlideshow() {
   await loadConfig();
   await loadMediaFiles(true);
@@ -133,6 +162,10 @@ setInterval(updateClock, 1000);
 
 startSlideshow();
 
+/*
+  Checks for updated settings and new media regularly.
+  This lets the info screen update without manual refresh.
+*/
 setInterval(() => {
   loadConfig();
   loadMediaFiles(false);
