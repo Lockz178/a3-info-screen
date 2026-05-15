@@ -4,7 +4,9 @@ This repository contains the project work for the A3 Info Screen project in Prac
 
 ## Project goal
 
-The goal of the project is to develop and improve an information screen system for the A3 corridor. The system should run on a Raspberry Pi and show media content, such as images and short videos, on a connected TV or display.
+The goal is to develop a Raspberry Pi-powered information screen system for the A3 corridor TV. The system displays uploaded images and short videos as a fullscreen slideshow.
+
+Teachers or staff can manage the media through a simple web dashboard. Uploaded files are saved on the Raspberry Pi, and the slideshow updates automatically.
 
 ## Team
 
@@ -17,16 +19,36 @@ The goal of the project is to develop and improve an information screen system f
 
 - Course: Practical Training 2
 - Project ID: 004
-- Project name: A3 info screen
+- Project name: A3 Info Screen
 - Team: 4
 - Version control: TAMK GitLab
 
-## Initial idea
+## Technologies
 
-The first idea is to create a simple system where users can upload or add media files, and the Raspberry Pi displays them as a fullscreen slideshow.
+- Node.js
+- Express
+- Multer
+- HTML
+- CSS
+- JavaScript
+- Raspberry Pi
 
-The details and features may change during the project based on customer feedback, sprint planning, and technical limitations.
+## Current features
 
-## Sprint 1 goal
+- Fullscreen slideshow page
+- Upload dashboard page
+- JPG, PNG, and MP4 upload
+- Uploaded media stored locally in the uploads folder
+- Media list API
+- Delete uploaded media from dashboard
+- Configurable image duration using config.json
+- Automatic media refresh
+- Media sorted by upload order
+- Raspberry Pi network access using IP address
 
-The goal of Sprint 1 is to understand the project requirements, check the Raspberry Pi setup, create the first backlog, and decide what the team should build first.
+## How to run locally
+
+Install dependencies:
+
+```bash
+npm install
