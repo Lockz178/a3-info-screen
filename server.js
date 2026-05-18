@@ -59,13 +59,14 @@ const allowedTypes = [".jpg", ".jpeg", ".png", ".mp4"];
 
 const upload = multer({
   storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
 
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error("Only JPG, PNG, and MP4 files are allowed for the MVP."));
+      cb(new Error("Only JPG, PNG, and MP4 files are allowed."));
     }
   },
 });
@@ -102,20 +103,24 @@ app.get("/api/config", (req, res) => {
   Files are sorted so the slideshow shows media from oldest upload to newest upload.
 */
 app.get("/api/media", (req, res) => {
-  const durations = loadDurations();
+  try {
+    const durations = loadDurations();
 
-  const files = fs.readdirSync(uploadsDir)
-    .sort()
-    .map((file) => {
-      const ext = path.extname(file).toLowerCase();
-      const item = { name: file, url: `/uploads/${file}`, type: ext };
-      if (ext === ".mp4" && durations[file] != null) {
-        item.duration = durations[file];
-      }
-      return item;
-    });
+    const files = fs.readdirSync(uploadsDir)
+      .sort()
+      .map((file) => {
+        const ext = path.extname(file).toLowerCase();
+        const item = { name: file, url: `/uploads/${file}`, type: ext };
+        if (ext === ".mp4" && durations[file] != null) {
+          item.duration = durations[file];
+        }
+        return item;
+      });
 
-  res.json(files);
+    res.json(files);
+  } catch (e) {
+    res.status(500).json({ error: "Could not load media files." });
+  }
 });
 
 /*
@@ -130,9 +135,13 @@ app.post("/api/upload", upload.single("media"), (req, res) => {
   if (ext === ".mp4" && req.body.duration) {
     const duration = Math.max(5, Math.min(60, parseInt(req.body.duration)));
     if (!isNaN(duration)) {
-      const durations = loadDurations();
-      durations[req.file.filename] = duration;
-      saveDurations(durations);
+      try {
+        const durations = loadDurations();
+        durations[req.file.filename] = duration;
+        saveDurations(durations);
+      } catch (e) {
+        // duration save failed but the file upload still succeeded
+      }
     }
   }
 
@@ -175,9 +184,10 @@ app.delete("/api/media/:filename", (req, res) => {
   Handles upload errors and sends a clear message back to the dashboard.
 */
 app.use((err, req, res, next) => {
-  res.status(400).json({
-    error: err.message,
-  });
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ error: "File is too large. Maximum size is 100MB." });
+  }
+  res.status(400).json({ error: err.message || "Something went wrong." });
 });
 
 app.listen(PORT, HOST, () => {

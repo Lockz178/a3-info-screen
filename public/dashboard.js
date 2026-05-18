@@ -33,6 +33,12 @@ videoDurationSlider.addEventListener("input", () => {
 async function loadFiles() {
   try {
     const response = await fetch("/api/media");
+
+    if (!response.ok) {
+      fileList.innerHTML = "<li>Could not load files.</li>";
+      return;
+    }
+
     const files = await response.json();
 
     fileList.innerHTML = "";
@@ -112,6 +118,18 @@ uploadForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".mp4"];
+  const fileExt = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+  if (!allowedExtensions.includes(fileExt)) {
+    uploadMessage.textContent = "Only JPG, PNG, and MP4 files are allowed.";
+    return;
+  }
+
+  if (file.size > 100 * 1024 * 1024) {
+    uploadMessage.textContent = "File is too large. Maximum size is 100MB.";
+    return;
+  }
+
   const formData = new FormData();
   formData.append("media", file);
 
@@ -127,21 +145,27 @@ uploadForm.addEventListener("submit", async (event) => {
       body: formData,
     });
 
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (e) {
+      uploadMessage.textContent = "Upload failed. Unexpected server response.";
+      return;
+    }
 
     if (!response.ok) {
       uploadMessage.textContent = result.error || "Upload failed.";
       return;
     }
 
-    uploadMessage.textContent = `Uploaded successfully: ${result.file}`;
+    uploadMessage.textContent = `Uploaded: ${result.file}`;
     mediaFileInput.value = "";
     durationRow.style.display = "none";
     videoDurationSlider.value = 60;
     videoDurationValue.textContent = "60";
     await loadFiles();
   } catch (error) {
-    uploadMessage.textContent = "Upload failed. Please try again.";
+    uploadMessage.textContent = "Upload failed. Please check your connection.";
   }
 });
 
