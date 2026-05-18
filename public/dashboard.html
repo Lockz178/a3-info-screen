@@ -15,15 +15,20 @@
       <h2>Upload media</h2>
 
       <form id="uploadForm">
-        <input 
-          type="file" 
-          id="mediaFile" 
-          name="media" 
-          accept=".jpg,.jpeg,.png,.mp4" 
-          required 
+        <input
+          type="file"
+          id="mediaFile"
+          name="media"
+          accept=".jpg,.jpeg,.png,.mp4"
+          required
         />
         <button type="submit">Upload</button>
       </form>
+
+      <div id="durationRow" class="slider-row" style="display: none;">
+        <label for="videoDurationSlider">Video plays for: <strong id="videoDurationValue">60</strong>s</label>
+        <input type="range" id="videoDurationSlider" min="5" max="60" value="60" />
+      </div>
 
       <p id="uploadMessage"></p>
     </section>

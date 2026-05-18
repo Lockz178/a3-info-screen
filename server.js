@@ -14,6 +14,20 @@ const HOST = "0.0.0.0";
 
 const uploadsDir = path.join(__dirname, "uploads");
 const configPath = path.join(__dirname, "config.json");
+const durationsPath = path.join(__dirname, "durations.json");
+
+function loadDurations() {
+  if (!fs.existsSync(durationsPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(durationsPath, "utf-8"));
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveDurations(durations) {
+  fs.writeFileSync(durationsPath, JSON.stringify(durations, null, 2));
+}
 
 /*
   The uploads folder stores media files uploaded from the dashboard.
@@ -72,14 +86,15 @@ app.get("/health", (req, res) => {
 */
 app.get("/api/config", (req, res) => {
   if (!fs.existsSync(configPath)) {
-    return res.json({
-      imageDurationSeconds: 10,
-    });
+    return res.json({ imageDurationSeconds: 10 });
   }
 
-  const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-
-  res.json(config);
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    res.json({ imageDurationSeconds: 10, ...config });
+  } catch (e) {
+    res.json({ imageDurationSeconds: 10 });
+  }
 });
 
 /*
@@ -87,14 +102,17 @@ app.get("/api/config", (req, res) => {
   Files are sorted so the slideshow shows media from oldest upload to newest upload.
 */
 app.get("/api/media", (req, res) => {
+  const durations = loadDurations();
+
   const files = fs.readdirSync(uploadsDir)
     .sort()
     .map((file) => {
-      return {
-        name: file,
-        url: `/uploads/${file}`,
-        type: path.extname(file).toLowerCase(),
-      };
+      const ext = path.extname(file).toLowerCase();
+      const item = { name: file, url: `/uploads/${file}`, type: ext };
+      if (ext === ".mp4" && durations[file] != null) {
+        item.duration = durations[file];
+      }
+      return item;
     });
 
   res.json(files);
@@ -104,6 +122,20 @@ app.get("/api/media", (req, res) => {
   Receives one uploaded media file from the dashboard and saves it to the uploads folder.
 */
 app.post("/api/upload", upload.single("media"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file received." });
+  }
+
+  const ext = path.extname(req.file.filename).toLowerCase();
+  if (ext === ".mp4" && req.body.duration) {
+    const duration = Math.max(5, Math.min(60, parseInt(req.body.duration)));
+    if (!isNaN(duration)) {
+      const durations = loadDurations();
+      durations[req.file.filename] = duration;
+      saveDurations(durations);
+    }
+  }
+
   res.json({
     message: "File uploaded successfully",
     file: req.file.filename,
@@ -126,6 +158,12 @@ app.delete("/api/media/:filename", (req, res) => {
   }
 
   fs.unlinkSync(filePath);
+
+  const durations = loadDurations();
+  if (durations[safeFilename] != null) {
+    delete durations[safeFilename];
+    saveDurations(durations);
+  }
 
   res.json({
     message: "File deleted successfully",

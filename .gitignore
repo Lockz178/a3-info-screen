@@ -1,4 +1,5 @@
 node_modules/
 uploads/
+durations.json
 .env
 .DS_Store

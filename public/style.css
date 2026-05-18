@@ -154,6 +154,28 @@ button:hover {
   word-break: break-word;
 }
 
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.duration-badge {
+  font-size: 13px;
+  background: #1e3a5f;
+  color: #93c5fd;
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
 .dashboard-link {
   margin-top: 24px;
 }

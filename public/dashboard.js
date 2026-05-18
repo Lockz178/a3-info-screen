@@ -6,7 +6,25 @@ const uploadForm = document.getElementById("uploadForm");
 const mediaFileInput = document.getElementById("mediaFile");
 const uploadMessage = document.getElementById("uploadMessage");
 const fileList = document.getElementById("fileList");
+const durationRow = document.getElementById("durationRow");
+const videoDurationSlider = document.getElementById("videoDurationSlider");
+const videoDurationValue = document.getElementById("videoDurationValue");
 const refreshInterval = 5000;
+
+mediaFileInput.addEventListener("change", () => {
+  const file = mediaFileInput.files[0];
+  if (file && file.type === "video/mp4") {
+    durationRow.style.display = "block";
+  } else {
+    durationRow.style.display = "none";
+    videoDurationSlider.value = 60;
+    videoDurationValue.textContent = "60";
+  }
+});
+
+videoDurationSlider.addEventListener("input", () => {
+  videoDurationValue.textContent = videoDurationSlider.value;
+});
 
 /*
   Loads uploaded files from the backend and displays them in the dashboard.
@@ -30,6 +48,15 @@ async function loadFiles() {
       const fileName = document.createElement("span");
       fileName.textContent = file.name;
 
+      listItem.appendChild(fileName);
+
+      if (file.type === ".mp4" && file.duration != null) {
+        const durationBadge = document.createElement("span");
+        durationBadge.textContent = `${file.duration}s`;
+        durationBadge.className = "duration-badge";
+        listItem.appendChild(durationBadge);
+      }
+
       const deleteButton = document.createElement("button");
       deleteButton.textContent = "Delete";
       deleteButton.className = "delete-button";
@@ -44,22 +71,25 @@ async function loadFiles() {
           return;
         }
 
-        const response = await fetch(`/api/media/${encodeURIComponent(file.name)}`, {
-          method: "DELETE",
-        });
+        try {
+          const response = await fetch(`/api/media/${encodeURIComponent(file.name)}`, {
+            method: "DELETE",
+          });
 
-        const result = await response.json();
+          const result = await response.json();
 
-        if (!response.ok) {
-          uploadMessage.textContent = result.error || "Delete failed.";
-          return;
+          if (!response.ok) {
+            uploadMessage.textContent = result.error || "Delete failed.";
+            return;
+          }
+
+          uploadMessage.textContent = `Deleted: ${result.file}`;
+          await loadFiles();
+        } catch (error) {
+          uploadMessage.textContent = "Delete failed. Please check your connection.";
         }
-
-        uploadMessage.textContent = `Deleted: ${result.file}`;
-        await loadFiles();
       });
 
-      listItem.appendChild(fileName);
       listItem.appendChild(deleteButton);
       fileList.appendChild(listItem);
     });
@@ -85,6 +115,10 @@ uploadForm.addEventListener("submit", async (event) => {
   const formData = new FormData();
   formData.append("media", file);
 
+  if (file.type === "video/mp4") {
+    formData.append("duration", videoDurationSlider.value);
+  }
+
   uploadMessage.textContent = "Uploading...";
 
   try {
@@ -102,6 +136,9 @@ uploadForm.addEventListener("submit", async (event) => {
 
     uploadMessage.textContent = `Uploaded successfully: ${result.file}`;
     mediaFileInput.value = "";
+    durationRow.style.display = "none";
+    videoDurationSlider.value = 60;
+    videoDurationValue.textContent = "60";
     await loadFiles();
   } catch (error) {
     uploadMessage.textContent = "Upload failed. Please try again.";

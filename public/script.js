@@ -7,6 +7,7 @@ const mediaArea = document.getElementById("mediaArea");
 let mediaFiles = [];
 let currentIndex = 0;
 let imageTimer = null;
+let videoTimer = null;
 let imageDuration = 10000;
 const refreshInterval = 5000;
 
@@ -60,6 +61,7 @@ async function loadMediaFiles(firstLoad = false) {
     const response = await fetch("/api/media");
     const newMediaFiles = await response.json();
 
+    const wasEmpty = mediaFiles.length === 0;
     mediaFiles = newMediaFiles;
 
     if (mediaFiles.length === 0) {
@@ -71,7 +73,7 @@ async function loadMediaFiles(firstLoad = false) {
       currentIndex = 0;
     }
 
-    if (firstLoad) {
+    if (firstLoad || wasEmpty) {
       currentIndex = 0;
       showCurrentMedia();
     }
@@ -107,6 +109,7 @@ function showPlaceholder() {
 */
 function showCurrentMedia() {
   clearTimeout(imageTimer);
+  clearTimeout(videoTimer);
 
   if (mediaFiles.length === 0) {
     showPlaceholder();
@@ -126,7 +129,19 @@ function showCurrentMedia() {
     video.controls = false;
     video.className = "media-item";
 
-    video.onended = showNextMedia;
+    video.onended = () => {
+      clearTimeout(videoTimer);
+      showNextMedia();
+    };
+
+    video.onerror = () => {
+      clearTimeout(videoTimer);
+      showNextMedia();
+    };
+
+    if (file.duration != null) {
+      videoTimer = setTimeout(showNextMedia, file.duration * 1000);
+    }
 
     mediaArea.appendChild(video);
   } else {
@@ -134,6 +149,8 @@ function showCurrentMedia() {
     image.src = file.url;
     image.alt = file.name;
     image.className = "media-item";
+
+    image.onerror = showNextMedia;
 
     mediaArea.appendChild(image);
 
