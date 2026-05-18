@@ -66,8 +66,19 @@ async function loadFiles() {
       }
 
       const deleteButton = document.createElement("button");
-      deleteButton.textContent = "Delete";
-      deleteButton.className = "delete-button";
+      deleteButton.className = "button button--delete";
+      deleteButton.innerHTML = `
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="fish"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <span class="button__text">Delete</span>
+      `;
 
       deleteButton.addEventListener("click", async () => {
         const confirmDelete = confirm(`Delete ${file.name}?`);
