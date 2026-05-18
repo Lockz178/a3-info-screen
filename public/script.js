@@ -140,7 +140,10 @@ function showCurrentMedia() {
     };
 
     if (file.duration != null) {
-      videoTimer = setTimeout(showNextMedia, file.duration * 1000);
+      videoTimer = setTimeout(() => {
+        video.pause();
+        showNextMedia();
+      }, file.duration * 1000);
     }
 
     mediaArea.appendChild(video);

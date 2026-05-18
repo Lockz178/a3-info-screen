@@ -13,7 +13,9 @@ const refreshInterval = 5000;
 
 mediaFileInput.addEventListener("change", () => {
   const file = mediaFileInput.files[0];
-  if (file && file.type === "video/mp4") {
+  if (!file) return;
+  const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+  if (ext === ".mp4") {
     durationRow.style.display = "block";
   } else {
     durationRow.style.display = "none";
@@ -133,7 +135,7 @@ uploadForm.addEventListener("submit", async (event) => {
   const formData = new FormData();
   formData.append("media", file);
 
-  if (file.type === "video/mp4") {
+  if (fileExt === ".mp4") {
     formData.append("duration", videoDurationSlider.value);
   }
 
