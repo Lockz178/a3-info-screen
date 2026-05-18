@@ -69,9 +69,6 @@ async function loadFiles() {
       deleteButton.textContent = "Delete";
       deleteButton.className = "delete-button";
 
-      /*
-        Sends a delete request to the backend when the user removes a media file.
-      */
       deleteButton.addEventListener("click", async () => {
         const confirmDelete = confirm(`Delete ${file.name}?`);
 
@@ -142,7 +139,7 @@ uploadForm.addEventListener("submit", async (event) => {
   uploadMessage.textContent = "Uploading...";
 
   try {
-    const response = await fetch("/api/upload", {
+    const response = await fetch("/api/media", {
       method: "POST",
       body: formData,
     });
