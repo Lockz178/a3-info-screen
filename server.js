@@ -1,14 +1,14 @@
 const express = require("express");
 const path = require("path");
-const mediaRoutes = require("./routes/media");
-const configRoutes = require("./routes/config");
+const mediaRoutes = require("./backend/routes/media");
+const configRoutes = require("./backend/routes/config");
 
 const app = express();
 const PORT = 3000;
 const HOST = "0.0.0.0";
 
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use(express.static(path.join(__dirname, "frontend")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "A3 Info Screen server is running" });

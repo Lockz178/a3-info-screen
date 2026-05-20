@@ -2,9 +2,9 @@
   "name": "a3-info-screen",
   "version": "1.0.0",
   "description": "A Raspberry Pi-powered information screen system for the A3 corridor.",
-  "main": "backend/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node backend/server.js"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
