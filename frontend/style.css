@@ -2,13 +2,19 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   background: #111827;
   color: white;
   min-height: 100vh;
 }
+
+/* ── Slideshow screen ────────────────────────────────────────────────────── */
 
 .screen {
   height: 100vh;
@@ -62,66 +68,418 @@ body {
   border-top: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.dashboard {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 24px;
+/* ── Dashboard layout ────────────────────────────────────────────────────── */
+
+.dash-body {
+  background: #0f172a;
+  background-image: radial-gradient(ellipse at top, #1a2744 0%, transparent 55%);
 }
 
-.dashboard h1 {
-  font-size: 40px;
-  margin-bottom: 10px;
-}
-
-.dashboard p {
-  font-size: 18px;
-  opacity: 0.85;
-}
-
-.upload-box,
-.file-list-box {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 12px;
-  padding: 24px;
-  margin-top: 24px;
-}
-
-.upload-box h2,
-.file-list-box h2 {
-  margin-top: 0;
-}
-
-form {
+.dash-header {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #2d3f55;
+  padding: 18px 32px;
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-input[type="file"] {
-  background: #111827;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
-  padding: 10px;
-  color: white;
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
-button {
-  color: white;
-  border: none;
+.dash-brand__icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.dash-brand__title {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.3px;
+}
+
+.dash-brand__sub {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.dash-view-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: 1px solid #2d3f55;
   border-radius: 8px;
-  padding: 11px 18px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.dash-view-link:hover {
+  color: #f1f5f9;
+  border-color: #475569;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dash-main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 36px 24px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+
+.dash-card {
+  background: #1e293b;
+  border: 1px solid #2d3f55;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.dash-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dash-card__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.dash-card__desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.file-count-badge {
+  background: #172a45;
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #1e3a5f;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ── Upload form ─────────────────────────────────────────────────────────── */
+
+#uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#mediaFile {
+  display: none;
+}
+
+/* ── Drop zone ───────────────────────────────────────────────────────────── */
+
+.drop-zone {
+  border: 2px dashed #334155;
+  border-radius: 12px;
+  padding: 36px 24px;
+  text-align: center;
   cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #0f172a;
+}
+
+.drop-zone:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #0f1f38;
+}
+
+.drop-zone:hover {
+  border-color: #3b82f6;
+  background: #0f1f38;
+}
+
+.drop-zone.drag-over {
+  border-style: solid;
+  border-color: #3b82f6;
+  background: #0f1f38;
+}
+
+.drop-zone__icon {
+  color: #475569;
+  margin-bottom: 12px;
+  transition: color 0.2s;
+}
+
+.drop-zone:hover .drop-zone__icon,
+.drop-zone:focus .drop-zone__icon,
+.drop-zone.drag-over .drop-zone__icon {
+  color: #3b82f6;
+}
+
+.drop-zone__text {
+  margin: 0;
   font-size: 15px;
-  background: #2563eb;
+  font-weight: 600;
+  color: #cbd5e1;
 }
 
-button:hover {
-  background: #1d4ed8;
+.drop-zone__hint {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #475569;
 }
 
-/* ── Fishy Button ── */
+.drop-zone__browse {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* ── File preview (inside drop zone after selection) ─────────────────────── */
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #162032;
+  border: 1px solid #2d3f55;
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.file-preview__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-preview__icon--image {
+  background: #172a45;
+  color: #60a5fa;
+}
+
+.file-preview__icon--video {
+  background: #2a1645;
+  color: #c084fc;
+}
+
+.file-preview__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-preview__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-preview__meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.file-preview__clear {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #64748b;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  font-size: 14px;
+}
+
+.file-preview__clear:hover {
+  background: #2d3f55;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+/* ── Duration slider ─────────────────────────────────────────────────────── */
+
+.slider-row {
+  background: #162032;
+  border: 1px solid #2d3f55;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slider-row__labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.slider-row__labels strong {
+  color: #e2e8f0;
+  font-size: 15px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.slider-row__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #475569;
+}
+
+/* ── Upload message ──────────────────────────────────────────────────────── */
+
+.upload-msg {
+  font-size: 14px;
+  min-height: 20px;
+  padding: 0 2px;
+  margin-top: 4px;
+}
+
+.upload-msg--success { color: #4ade80; }
+.upload-msg--error   { color: #f87171; }
+.upload-msg--info    { color: #94a3b8; }
+
+/* ── File list ───────────────────────────────────────────────────────────── */
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-list__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0f172a;
+  border: 1px solid #2d3f55;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+
+.file-item:hover {
+  border-color: #3b4f6b;
+}
+
+.file-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-item__icon--image {
+  background: #172a45;
+  color: #60a5fa;
+}
+
+.file-item__icon--video {
+  background: #2a1645;
+  color: #c084fc;
+}
+
+.file-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-item__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-item__meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.duration-badge {
+  font-size: 12px;
+  font-weight: 600;
+  background: #172a45;
+  color: #60a5fa;
+  border: 1px solid #1e3a5f;
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Fishy Button ────────────────────────────────────────────────────────── */
+
 .button--upload {
   --color_1: #1d4ed8;
   --color_2: #2563eb;
@@ -129,9 +487,14 @@ button:hover {
   --color_4: #60a5fa;
   --color_5: #1e40af;
   --color_6: #1e3a8a;
-  width: 130px;
-  height: 46px;
-  border-radius: 8px;
+  width: 160px;
+  height: 48px;
+  border-radius: 10px;
+}
+
+.button--upload:disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .button--delete {
@@ -141,9 +504,10 @@ button:hover {
   --color_4: #ef4444;
   --color_5: #7f1d1d;
   --color_6: #450a0a;
-  width: 90px;
-  height: 38px;
+  width: 80px;
+  height: 36px;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .button {
@@ -299,7 +663,7 @@ button:hover {
   letter-spacing: 2px;
   color: #fff;
   transition: all ease 1s;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, Arial, sans-serif;
   pointer-events: none;
 }
 
@@ -335,64 +699,7 @@ button:hover {
          clip-path:path('M17.92,14.38c1.77-4.98,5.6-8.82,5.7-14.38-4.05,6.12-5,3.31-8.12,6-2.63-1.74-6.8,1.19-9.75-2.12,.35,5.4,6.79,7.43,8.26,12.02,0,0,.86,10.01-6.97,23.52-2.04-2.67-3.76-8.1-5.1-9.25,1.19,5.05-.05,9.67,1.84,15.88-.03,.08-8.58,20.98,.12,30.85,2.94,3.34,19.34-10.13,18.67-25.45,5.49-4.79,5.92-9.94,9.63-14.03-1.67,.35-6.84,4.82-9.88,6.29,.14-12.63-4.09-23.04-4.42-29.33Z'); }
 }
 
-#uploadMessage {
-  margin-top: 16px;
-  font-size: 16px;
-}
-
-#fileList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#fileList li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  background: #111827;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-  word-break: break-word;
-}
-
-.slider-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-input[type="range"] {
-  width: 100%;
-  accent-color: #2563eb;
-  cursor: pointer;
-}
-
-.duration-badge {
-  font-size: 13px;
-  background: #1e3a5f;
-  color: #93c5fd;
-  border-radius: 6px;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-
-.dashboard-link {
-  margin-top: 24px;
-}
-
-.dashboard-link a {
-  color: #93c5fd;
-  text-decoration: none;
-}
-
-.dashboard-link a:hover {
-  text-decoration: underline;
-}
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 700px) {
   .screen {
@@ -413,25 +720,39 @@ input[type="range"] {
     gap: 8px;
   }
 
-  .dashboard h1 {
-    font-size: 30px;
+  .dash-header {
+    padding: 14px 18px;
   }
 
-  form {
-    flex-direction: column;
-    align-items: stretch;
+  .dash-brand__sub {
+    display: none;
   }
 
-  button:not(.button) {
-    width: 100%;
+  .dash-view-link span {
+    display: none;
   }
 
-  .button {
-    width: 100% !important;
+  .dash-view-link {
+    padding: 8px 12px;
   }
 
-  #fileList li {
-    flex-direction: column;
-    align-items: stretch;
+  .dash-main {
+    padding: 20px 16px 56px;
+  }
+
+  .dash-card {
+    padding: 18px;
+  }
+
+  .file-item {
+    flex-wrap: wrap;
+  }
+
+  .file-item__info {
+    flex-basis: calc(100% - 50px - 12px);
+  }
+
+  .button--delete {
+    margin-left: auto;
   }
 }

@@ -3,26 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A3 Info Screen Dashboard</title>
+  <title>A3 Info Screen &mdash; Dashboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <main class="dashboard">
-    <h1>A3 Info Screen Dashboard</h1>
-    <p>Upload media files to be shown on the A3 hallway screen.</p>
+<body class="dash-body">
 
-    <section class="upload-box">
-      <h2>Upload media</h2>
+  <header class="dash-header">
+    <div class="dash-brand">
+      <svg class="dash-brand__icon" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <div>
+        <span class="dash-brand__title">A3 Info Screen</span>
+        <span class="dash-brand__sub">Corridor Display Dashboard</span>
+      </div>
+    </div>
+    <a href="/" class="dash-view-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span>View Screen</span>
+    </a>
+  </header>
 
-      <form id="uploadForm">
-        <input
-          type="file"
-          id="mediaFile"
-          name="media"
-          accept=".jpg,.jpeg,.png,.mp4"
-          required
-        />
-        <button type="submit" class="button button--upload">
+  <main class="dash-main">
+
+    <section class="dash-card">
+      <div class="dash-card__header">
+        <div>
+          <h2 class="dash-card__title">Upload Media</h2>
+          <p class="dash-card__desc">JPG, PNG or MP4 &mdash; max 100&nbsp;MB</p>
+        </div>
+      </div>
+
+      <form id="uploadForm" novalidate>
+        <input type="file" id="mediaFile" name="media" accept=".jpg,.jpeg,.png,.mp4" aria-hidden="true" tabindex="-1" />
+
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="File upload area. Click or drag files here.">
+          <div id="dropIdle">
+            <svg class="drop-zone__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+            <p class="drop-zone__text">Drag &amp; drop files here</p>
+            <p class="drop-zone__hint">or <span class="drop-zone__browse">click to browse</span></p>
+          </div>
+          <div id="dropSelected" hidden>
+            <div class="file-preview" id="filePreview"></div>
+          </div>
+        </div>
+
+        <div id="durationRow" class="slider-row" hidden>
+          <div class="slider-row__labels">
+            <span>Video plays for</span>
+            <strong><span id="videoDurationValue">60</span>s</strong>
+          </div>
+          <input type="range" id="videoDurationSlider" min="5" max="60" value="60" />
+          <div class="slider-row__ticks"><span>5s</span><span>60s</span></div>
+        </div>
+
+        <button type="submit" class="button button--upload" id="uploadBtn">
           <div class="wave"></div>
           <div class="wave"></div>
           <div class="wave"></div>
@@ -36,24 +80,28 @@
         </button>
       </form>
 
-      <div id="durationRow" class="slider-row" style="display: none;">
-        <label for="videoDurationSlider">Video plays for: <strong id="videoDurationValue">60</strong>s</label>
-        <input type="range" id="videoDurationSlider" min="5" max="60" value="60" />
-      </div>
-
-      <p id="uploadMessage"></p>
+      <div id="uploadMessage" class="upload-msg" role="status" aria-live="polite"></div>
     </section>
 
-    <section class="file-list-box">
-      <h2>Uploaded files</h2>
-      <ul id="fileList">
-        <li>No files loaded yet.</li>
+    <section class="dash-card">
+      <div class="dash-card__header">
+        <div>
+          <h2 class="dash-card__title">Media Library</h2>
+          <p class="dash-card__desc">Files currently shown on the corridor screen</p>
+        </div>
+        <span class="file-count-badge" id="fileCount" hidden></span>
+      </div>
+      <ul id="fileList" class="file-list">
+        <li class="file-list__empty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+            <polyline points="13 2 13 9 20 9"/>
+          </svg>
+          <span>No files uploaded yet</span>
+        </li>
       </ul>
     </section>
 
-    <p class="dashboard-link">
-      <a href="/">Open slideshow screen</a>
-    </p>
   </main>
 
   <script src="dashboard.js"></script>
