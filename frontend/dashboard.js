@@ -37,7 +37,7 @@ function renderDropZone() {
   }
 
   const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
-  const isVideo = ext === ".mp4";
+  const isVideo = ext === ".mp4" || ext === ".mov";
   const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(1);
 
   const icon = isVideo
@@ -76,7 +76,7 @@ function renderDurationRow() {
     return;
   }
   const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
-  if (ext === ".mp4") {
+  if (ext === ".mp4" || ext === ".mov") {
     durationRow.hidden = false;
   } else {
     durationRow.hidden = true;
@@ -164,7 +164,7 @@ async function loadFiles() {
       li.className = "file-item";
 
       const ext = file.type;
-      const isVideo = ext === ".mp4";
+      const isVideo = ext === ".mp4" || ext === ".mov";
 
       li.innerHTML = `
         <div class="file-item__icon file-item__icon--${isVideo ? "video" : "image"}">${fileIcon(ext)}</div>
@@ -222,11 +222,11 @@ uploadForm.addEventListener("submit", async (e) => {
     return;
   }
 
-  const allowedExtensions = [".jpg", ".jpeg", ".png", ".mp4"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".mp4", ".mov"];
   const fileExt = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
 
   if (!allowedExtensions.includes(fileExt)) {
-    showMessage("Only JPG, PNG, and MP4 files are allowed.", "error");
+    showMessage("Only JPG, PNG, MP4, and MOV files are allowed.", "error");
     return;
   }
 

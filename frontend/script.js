@@ -117,7 +117,7 @@ function showCurrentMedia() {
   }
 
   const file = mediaFiles[currentIndex];
-  const isVideo = file.type === ".mp4";
+  const isVideo = file.type === ".mp4" || file.type === ".mov";
 
   mediaArea.innerHTML = "";
 
