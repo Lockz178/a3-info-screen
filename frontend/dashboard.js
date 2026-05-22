@@ -322,9 +322,10 @@ uploadForm.addEventListener("submit", async (e) => {
 
   const formData = new FormData();
   formData.append("media", selectedFile);
-  if (fileExt === ".mp4") formData.append("duration", videoDurationSlider.value);
+  if (fileExt === ".mp4" || fileExt === ".mov") formData.append("duration", videoDurationSlider.value);
 
-  showMessage("Uploading…", "info");
+  const isVideo = fileExt === ".mp4" || fileExt === ".mov";
+  showMessage(isVideo ? "Uploading and processing video, please wait…" : "Uploading…", "info");
   document.getElementById("uploadBtn").disabled = true;
 
   try {
