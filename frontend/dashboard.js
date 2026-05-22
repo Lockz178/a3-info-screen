@@ -124,7 +124,7 @@ videoDurationSlider.addEventListener("input", () => {
 // ── File list ─────────────────────────────────────────────────────────────
 
 function fileIcon(ext) {
-  if (ext === ".mp4") {
+  if (ext === ".mp4" || ext === ".mov") {
     return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
     </svg>`;
@@ -132,6 +132,133 @@ function fileIcon(ext) {
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
   </svg>`;
+}
+
+function updateOrderNumbers() {
+  fileList.querySelectorAll(".file-item").forEach((item, i) => {
+    const badge = item.querySelector(".file-item__order");
+    if (badge) badge.textContent = i + 1;
+  });
+}
+
+async function persistOrder() {
+  const order = [...fileList.querySelectorAll(".file-item")].map(li => li.dataset.filename);
+  try {
+    await fetch("/api/media/order", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+  } catch {}
+}
+
+function buildFileItem(file, index) {
+  const li = document.createElement("li");
+  li.className = "file-item";
+  li.dataset.filename = file.name;
+
+  const ext = file.type;
+  const isVideo = ext === ".mp4" || ext === ".mov";
+
+  li.innerHTML = `
+    <div class="drag-handle" aria-label="Drag to reorder">
+      <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+        <circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/>
+        <circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/>
+        <circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/>
+      </svg>
+    </div>
+    <span class="file-item__order">${index + 1}</span>
+    <div class="file-item__icon file-item__icon--${isVideo ? "video" : "image"}">${fileIcon(ext)}</div>
+    <div class="file-item__info">
+      <span class="file-item__name" title="${file.name}">${file.name}</span>
+      <span class="file-item__meta">${ext.slice(1).toUpperCase()}</span>
+    </div>
+    ${isVideo && file.duration != null ? `<span class="duration-badge">${file.duration}s</span>` : ""}
+  `;
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "button button--delete";
+  deleteBtn.innerHTML = `
+    <div class="wave"></div><div class="wave"></div>
+    <div class="wave"></div><div class="wave"></div>
+    <div class="fish"></div>
+    <div class="bubble"></div><div class="bubble"></div>
+    <div class="bubble"></div><div class="bubble"></div>
+    <span class="button__text">Delete</span>
+  `;
+
+  deleteBtn.addEventListener("click", async () => {
+    if (!confirm(`Delete ${file.name}?`)) return;
+    try {
+      const res = await fetch(`/api/media/${encodeURIComponent(file.name)}`, { method: "DELETE" });
+      const result = await res.json();
+      if (!res.ok) { showMessage(result.error || "Delete failed.", "error"); return; }
+      showMessage(`Deleted: ${result.file}`, "success");
+      await loadFiles();
+    } catch {
+      showMessage("Delete failed. Please check your connection.", "error");
+    }
+  });
+
+  li.appendChild(deleteBtn);
+
+  const handle = li.querySelector(".drag-handle");
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+
+    const rect = li.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+
+    const ghost = li.cloneNode(true);
+    ghost.className = "file-item drag-ghost";
+    ghost.style.width = rect.width + "px";
+    ghost.style.top = rect.top + "px";
+    ghost.style.left = rect.left + "px";
+    document.body.appendChild(ghost);
+
+    li.classList.add("drag-placeholder");
+
+    let lastTarget = null;
+
+    function onMove(e) {
+      ghost.style.top = (e.clientY - offsetY) + "px";
+
+      const candidates = [...fileList.querySelectorAll(".file-item:not(.drag-placeholder)")];
+      let newTarget = null;
+      for (const item of candidates) {
+        const r = item.getBoundingClientRect();
+        if (e.clientY < r.top + r.height / 2) {
+          newTarget = item;
+          break;
+        }
+      }
+
+      if (newTarget !== lastTarget) {
+        lastTarget = newTarget;
+        if (newTarget) {
+          fileList.insertBefore(li, newTarget);
+        } else {
+          fileList.appendChild(li);
+        }
+        updateOrderNumbers();
+      }
+    }
+
+    async function onUp() {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      ghost.remove();
+      li.classList.remove("drag-placeholder");
+      updateOrderNumbers();
+      await persistOrder();
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  });
+
+  return li;
 }
 
 async function loadFiles() {
@@ -159,49 +286,7 @@ async function loadFiles() {
       return;
     }
 
-    files.forEach((file) => {
-      const li = document.createElement("li");
-      li.className = "file-item";
-
-      const ext = file.type;
-      const isVideo = ext === ".mp4" || ext === ".mov";
-
-      li.innerHTML = `
-        <div class="file-item__icon file-item__icon--${isVideo ? "video" : "image"}">${fileIcon(ext)}</div>
-        <div class="file-item__info">
-          <span class="file-item__name" title="${file.name}">${file.name}</span>
-          <span class="file-item__meta">${ext.slice(1).toUpperCase()}</span>
-        </div>
-        ${isVideo && file.duration != null ? `<span class="duration-badge">${file.duration}s</span>` : ""}
-      `;
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "button button--delete";
-      deleteBtn.innerHTML = `
-        <div class="wave"></div><div class="wave"></div>
-        <div class="wave"></div><div class="wave"></div>
-        <div class="fish"></div>
-        <div class="bubble"></div><div class="bubble"></div>
-        <div class="bubble"></div><div class="bubble"></div>
-        <span class="button__text">Delete</span>
-      `;
-
-      deleteBtn.addEventListener("click", async () => {
-        if (!confirm(`Delete ${file.name}?`)) return;
-        try {
-          const res = await fetch(`/api/media/${encodeURIComponent(file.name)}`, { method: "DELETE" });
-          const result = await res.json();
-          if (!res.ok) { showMessage(result.error || "Delete failed.", "error"); return; }
-          showMessage(`Deleted: ${result.file}`, "success");
-          await loadFiles();
-        } catch {
-          showMessage("Delete failed. Please check your connection.", "error");
-        }
-      });
-
-      li.appendChild(deleteBtn);
-      fileList.appendChild(li);
-    });
+    files.forEach((file, index) => fileList.appendChild(buildFileItem(file, index)));
   } catch {
     fileList.innerHTML = '<li class="file-list__empty"><span>Could not load files.</span></li>';
   }

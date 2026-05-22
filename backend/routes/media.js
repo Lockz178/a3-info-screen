@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 const upload = require("../middleware/upload");
-const { uploadsDir, loadDurations, saveDurations } = require("../utils/fileHelpers");
+const { uploadsDir, loadDurations, saveDurations, loadOrder, saveOrder } = require("../utils/fileHelpers");
 
 const VIDEO_EXTS = new Set([".mp4", ".mov"]);
 
@@ -36,19 +36,36 @@ function checkFileSignature(filePath, ext) {
 router.get("/", (req, res) => {
   try {
     const durations = loadDurations();
-    const files = fs.readdirSync(uploadsDir)
-      .sort()
-      .map((file) => {
-        const ext = path.extname(file).toLowerCase();
-        const item = { name: file, url: `/uploads/${file}`, type: ext };
-        if (VIDEO_EXTS.has(ext) && durations[file] != null) {
-          item.duration = durations[file];
-        }
-        return item;
-      });
+    const order = loadOrder();
+    const allFiles = fs.readdirSync(uploadsDir).sort();
+    const ordered = [
+      ...order.filter(f => allFiles.includes(f)),
+      ...allFiles.filter(f => !order.includes(f)),
+    ];
+    const files = ordered.map((file) => {
+      const ext = path.extname(file).toLowerCase();
+      const item = { name: file, url: `/uploads/${file}`, type: ext };
+      if (VIDEO_EXTS.has(ext) && durations[file] != null) {
+        item.duration = durations[file];
+      }
+      return item;
+    });
     res.status(200).json(files);
   } catch (e) {
     res.status(500).json({ error: "Could not load media files." });
+  }
+});
+
+router.put("/order", express.json(), (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) {
+    return res.status(400).json({ error: "order must be an array" });
+  }
+  try {
+    saveOrder(order);
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: "Could not save order." });
   }
 });
 
@@ -78,6 +95,14 @@ router.post("/", upload.single("media"), (req, res) => {
     }
   }
 
+  try {
+    const order = loadOrder();
+    if (!order.includes(req.file.filename)) {
+      order.push(req.file.filename);
+      saveOrder(order);
+    }
+  } catch (e) {}
+
   res.status(201).json({
     message: "File uploaded successfully",
     file: req.file.filename,
@@ -99,6 +124,13 @@ router.delete("/:filename", (req, res) => {
     if (durations[safeFilename] != null) {
       delete durations[safeFilename];
       saveDurations(durations);
+    }
+
+    const order = loadOrder();
+    const idx = order.indexOf(safeFilename);
+    if (idx !== -1) {
+      order.splice(idx, 1);
+      saveOrder(order);
     }
 
     res.status(200).json({ message: "File deleted successfully", file: safeFilename });

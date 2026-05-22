@@ -439,11 +439,54 @@ input[type="range"] {
   border: 1px solid #2d3f55;
   border-radius: 10px;
   padding: 12px 14px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, opacity 0.2s;
+  cursor: default;
 }
 
 .file-item:hover {
   border-color: #3b4f6b;
+}
+
+.drag-ghost {
+  position: fixed !important;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.92;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px #7a40aa;
+  transform: scale(1.02);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.drag-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drag-handle {
+  color: #475569;
+  cursor: grab;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  transition: color 0.2s;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.file-item:hover .drag-handle {
+  color: #7a40aa;
+}
+
+.file-item__order {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .file-item__icon {
