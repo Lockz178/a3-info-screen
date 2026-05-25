@@ -110,6 +110,17 @@ router.get("/", (req, res) => {
   }
 });
 
+let currentlyShowing = null;
+
+router.get("/current", (req, res) => {
+  res.json({ name: currentlyShowing });
+});
+
+router.post("/current", express.json(), (req, res) => {
+  currentlyShowing = req.body.name || null;
+  res.json({ ok: true });
+});
+
 router.put("/order", express.json(), (req, res) => {
   const { order } = req.body;
   if (!Array.isArray(order)) {

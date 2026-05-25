@@ -280,6 +280,10 @@ function buildFileItem(file, index, maxDuration) {
       <span class="file-item__name" title="${file.name}">${file.name}</span>
       <span class="file-item__meta">${ext.slice(1).toUpperCase()}</span>
     </div>
+    <span class="now-showing-badge">
+      <span class="now-showing-badge__dot"></span>
+      Live
+    </span>
   `;
 
   if (file.thumbnail) {
@@ -493,5 +497,17 @@ uploadForm.addEventListener("submit", async (e) => {
   }
 });
 
+async function updateNowShowing() {
+  try {
+    const res = await fetch("/api/media/current");
+    if (!res.ok) return;
+    const { name } = await res.json();
+    document.querySelectorAll(".file-item").forEach(li => {
+      li.classList.toggle("file-item--active", !!name && li.dataset.filename === name);
+    });
+  } catch {}
+}
+
 loadFiles();
 setInterval(loadFiles, refreshInterval);
+setInterval(updateNowShowing, 2000);

@@ -452,6 +452,46 @@ input[type="range"] {
   border-color: #4e008e;
 }
 
+.file-item--active {
+  border-color: #7a40aa;
+  background: #150025;
+  box-shadow: 0 0 0 1px #4e008e inset, 0 4px 20px rgba(78, 0, 142, 0.25);
+}
+
+.now-showing-badge {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #82c8f0;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  background: rgba(130, 200, 240, 0.1);
+  border: 1px solid rgba(130, 200, 240, 0.25);
+  border-radius: 20px;
+}
+
+.file-item--active .now-showing-badge {
+  display: inline-flex;
+}
+
+.now-showing-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #82c8f0;
+  flex-shrink: 0;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.65); }
+}
+
 .drag-ghost {
   position: fixed !important;
   z-index: 1000;

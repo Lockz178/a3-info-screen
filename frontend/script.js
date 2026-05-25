@@ -138,8 +138,17 @@ async function loadMediaFiles(firstLoad = false) {
 /*
   Shows a default message when no media has been uploaded yet.
 */
+function reportCurrent(name) {
+  fetch("/api/media/current", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name || null }),
+  }).catch(() => {});
+}
+
 function showPlaceholder() {
   clearTimeout(imageTimer);
+  reportCurrent(null);
 
   mediaArea.innerHTML = `
     <div class="placeholder">
@@ -167,6 +176,7 @@ function showCurrentMedia() {
   const file = mediaFiles[currentIndex];
   const isVideo = file.type === ".mp4" || file.type === ".mov";
 
+  reportCurrent(file.name);
   mediaArea.innerHTML = "";
   currentVideoEl = null;
 
