@@ -184,6 +184,36 @@ router.post("/", upload.single("media"), async (req, res) => {
   }
 });
 
+router.patch("/:filename/duration", express.json(), (req, res) => {
+  const safeFilename = path.basename(req.params.filename);
+  const filePath = path.join(uploadsDir, safeFilename);
+  const ext = path.extname(safeFilename).toLowerCase();
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "File not found." });
+  }
+  if (!VIDEO_EXTS.has(ext)) {
+    return res.status(400).json({ error: "Duration can only be set for video files." });
+  }
+
+  const raw = parseInt(req.body.duration);
+  if (isNaN(raw)) {
+    return res.status(400).json({ error: "duration must be a number." });
+  }
+
+  const maxDuration = (loadConfig().maxVideoDurationSeconds) || 60;
+  const duration = Math.max(5, Math.min(maxDuration, raw));
+
+  try {
+    const durations = loadDurations();
+    durations[safeFilename] = duration;
+    saveDurations(durations);
+    res.status(200).json({ duration });
+  } catch (e) {
+    res.status(500).json({ error: "Could not save duration." });
+  }
+});
+
 router.delete("/:filename", (req, res) => {
   const safeFilename = path.basename(req.params.filename);
   const filePath = path.join(uploadsDir, safeFilename);

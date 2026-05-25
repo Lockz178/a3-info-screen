@@ -541,6 +541,128 @@ input[type="range"] {
   padding: 3px 10px;
   white-space: nowrap;
   flex-shrink: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.duration-badge:hover {
+  background: #3d006e;
+  border-color: #7a40aa;
+  color: #c3b9d7;
+}
+
+.duration-badge__edit-icon {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.duration-badge:hover .duration-badge__edit-icon {
+  opacity: 1;
+}
+
+/* ── Duration editor popover ─────────────────────────────────────────────── */
+
+.duration-popover {
+  position: fixed;
+  z-index: 500;
+  background: #0d001a;
+  border: 1px solid #4e008e;
+  border-radius: 14px;
+  padding: 18px;
+  width: 248px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(78, 0, 142, 0.25) inset;
+  animation: popoverIn 0.14s ease;
+}
+
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.duration-popover__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.duration-popover__value-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.duration-popover__value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #e2e8f0;
+  line-height: 1;
+  min-width: 2ch;
+  transition: color 0.1s;
+}
+
+.duration-popover__unit {
+  font-size: 13px;
+  color: #475569;
+}
+
+.duration-popover__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #475569;
+  margin-top: 5px;
+}
+
+.duration-popover__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.duration-popover__btn {
+  flex: 1;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.duration-popover__btn--cancel {
+  background: transparent;
+  border-color: #2d3f55;
+  color: #64748b;
+}
+
+.duration-popover__btn--cancel:hover {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+.duration-popover__btn--save {
+  background: #4e008e;
+  border-color: #7a40aa;
+  color: #fff;
+}
+
+.duration-popover__btn--save:hover {
+  background: #6b12b8;
+  border-color: #9b59d4;
 }
 
 /* ── Fishy Button ────────────────────────────────────────────────────────── */

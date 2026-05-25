@@ -121,6 +121,107 @@ videoDurationSlider.addEventListener("input", () => {
   videoDurationValue.textContent = videoDurationSlider.value;
 });
 
+// ── Duration popover ──────────────────────────────────────────────────────
+
+let activeDurationPopover = null;
+
+function closeDurationPopover() {
+  if (activeDurationPopover) {
+    activeDurationPopover.remove();
+    activeDurationPopover = null;
+  }
+}
+
+function openDurationEditor(badge, file, maxDuration) {
+  closeDurationPopover();
+
+  const current = file.duration ?? maxDuration;
+
+  const popover = document.createElement("div");
+  popover.className = "duration-popover";
+  popover.innerHTML = `
+    <div class="duration-popover__title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Display duration
+    </div>
+    <div class="duration-popover__value-line">
+      <span class="duration-popover__value">${current}</span>
+      <span class="duration-popover__unit">seconds</span>
+    </div>
+    <input type="range" min="5" max="${maxDuration}" value="${current}">
+    <div class="duration-popover__ticks"><span>5s</span><span>${maxDuration}s</span></div>
+    <div class="duration-popover__actions">
+      <button class="duration-popover__btn duration-popover__btn--cancel">Cancel</button>
+      <button class="duration-popover__btn duration-popover__btn--save">Save</button>
+    </div>
+  `;
+
+  const rect = badge.getBoundingClientRect();
+  const popoverWidth = 248;
+  let top = rect.bottom + 8;
+  let left = rect.left;
+  if (top + 190 > window.innerHeight) top = rect.top - 190 - 8;
+  if (left + popoverWidth > window.innerWidth - 8) left = window.innerWidth - popoverWidth - 8;
+  popover.style.top = top + "px";
+  popover.style.left = left + "px";
+
+  document.body.appendChild(popover);
+  activeDurationPopover = popover;
+
+  const slider = popover.querySelector("input[type=range]");
+  const valueDisplay = popover.querySelector(".duration-popover__value");
+
+  slider.addEventListener("input", () => {
+    valueDisplay.textContent = slider.value;
+  });
+
+  popover.querySelector(".duration-popover__btn--cancel").addEventListener("click", closeDurationPopover);
+
+  popover.querySelector(".duration-popover__btn--save").addEventListener("click", async () => {
+    const newDuration = parseInt(slider.value);
+    closeDurationPopover();
+    try {
+      const res = await fetch(`/api/media/${encodeURIComponent(file.name)}/duration`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ duration: newDuration }),
+      });
+      let result;
+      try { result = await res.json(); } catch { result = {}; }
+      if (!res.ok) {
+        showMessage(result.error || "Could not save duration.", "error");
+        return;
+      }
+      file.duration = result.duration;
+      badge.querySelector(".duration-badge__value").textContent = result.duration;
+      showMessage(`Duration updated to ${result.duration}s.`, "success");
+    } catch {
+      showMessage("Could not save duration. Please check your connection.", "error");
+    }
+  });
+
+  function onOutsideClick(e) {
+    if (!popover.contains(e.target) && e.target !== badge) {
+      closeDurationPopover();
+      document.removeEventListener("pointerdown", onOutsideClick);
+      document.removeEventListener("keydown", onEscape);
+    }
+  }
+  function onEscape(e) {
+    if (e.key === "Escape") {
+      closeDurationPopover();
+      document.removeEventListener("pointerdown", onOutsideClick);
+      document.removeEventListener("keydown", onEscape);
+    }
+  }
+  setTimeout(() => {
+    document.addEventListener("pointerdown", onOutsideClick);
+    document.addEventListener("keydown", onEscape);
+  }, 0);
+}
+
 // ── File list ─────────────────────────────────────────────────────────────
 
 function fileIcon(ext) {
@@ -155,7 +256,7 @@ async function persistOrder() {
   }
 }
 
-function buildFileItem(file, index) {
+function buildFileItem(file, index, maxDuration) {
   const li = document.createElement("li");
   li.className = "file-item";
   li.dataset.filename = file.name;
@@ -177,8 +278,22 @@ function buildFileItem(file, index) {
       <span class="file-item__name" title="${file.name}">${file.name}</span>
       <span class="file-item__meta">${ext.slice(1).toUpperCase()}</span>
     </div>
-    ${isVideo && file.duration != null ? `<span class="duration-badge">${file.duration}s</span>` : ""}
   `;
+
+  if (isVideo) {
+    const badge = document.createElement("span");
+    badge.className = "duration-badge";
+    badge.title = "Click to edit display duration";
+    badge.innerHTML = `
+      <span class="duration-badge__value">${file.duration ?? maxDuration}</span>s
+      <svg class="duration-badge__edit-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+    `;
+    badge.addEventListener("click", () => openDurationEditor(badge, file, maxDuration));
+    li.appendChild(badge);
+  }
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "button button--delete";
@@ -210,6 +325,7 @@ function buildFileItem(file, index) {
   const handle = li.querySelector(".drag-handle");
   handle.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    closeDurationPopover();
 
     const rect = li.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
@@ -265,15 +381,27 @@ function buildFileItem(file, index) {
   return li;
 }
 
+let maxVideoDuration = 60;
+
 async function loadFiles() {
   try {
-    const response = await fetch("/api/media");
-    if (!response.ok) {
+    const [mediaRes, configRes] = await Promise.all([
+      fetch("/api/media"),
+      fetch("/api/config"),
+    ]);
+
+    if (configRes.ok) {
+      const cfg = await configRes.json().catch(() => ({}));
+      if (cfg.maxVideoDurationSeconds) maxVideoDuration = cfg.maxVideoDurationSeconds;
+    }
+
+    if (!mediaRes.ok) {
       fileList.innerHTML = '<li class="file-list__empty"><span>Could not load files.</span></li>';
       return;
     }
 
-    const files = await response.json();
+    const files = await mediaRes.json();
+    closeDurationPopover();
     fileList.innerHTML = "";
 
     fileCountBadge.hidden = files.length === 0;
@@ -290,7 +418,7 @@ async function loadFiles() {
       return;
     }
 
-    files.forEach((file, index) => fileList.appendChild(buildFileItem(file, index)));
+    files.forEach((file, index) => fileList.appendChild(buildFileItem(file, index, maxVideoDuration)));
   } catch {
     fileList.innerHTML = '<li class="file-list__empty"><span>Could not load files.</span></li>';
   }
