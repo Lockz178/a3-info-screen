@@ -436,6 +436,7 @@ async function loadFiles() {
     }
 
     files.forEach((file, index) => fileList.appendChild(buildFileItem(file, index, maxVideoDuration)));
+    await updateNowShowing();
   } catch {
     fileList.innerHTML = '<li class="file-list__empty"><span>Could not load files.</span></li>';
   }
@@ -501,7 +502,8 @@ async function updateNowShowing() {
   try {
     const res = await fetch("/api/media/current");
     if (!res.ok) return;
-    const { name } = await res.json();
+    const data = await res.json();
+    const name = data.name || null;
     document.querySelectorAll(".file-item").forEach(li => {
       li.classList.toggle("file-item--active", !!name && li.dataset.filename === name);
     });
@@ -509,5 +511,6 @@ async function updateNowShowing() {
 }
 
 loadFiles();
+updateNowShowing();
 setInterval(loadFiles, refreshInterval);
 setInterval(updateNowShowing, 2000);
