@@ -3,6 +3,14 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 const ffmpeg = require("fluent-ffmpeg");
+
+/*
+  Set ffmpeg and ffprobe paths from bundled npm packages.
+  ffmpeg-static and @ffprobe-installer/ffprobe include pre-built binaries for
+  Windows, macOS, and Linux ARM (Raspberry Pi). The try/catch means that if
+  the bundled binary fails (e.g. missing, wrong architecture), fluent-ffmpeg
+  falls back to whatever system ffmpeg is in PATH instead of crashing the app.
+*/
 try {
   const ffmpegPath = require("ffmpeg-static");
   if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
@@ -11,11 +19,19 @@ try {
   const { path: ffprobePath } = require("@ffprobe-installer/ffprobe");
   if (ffprobePath) ffmpeg.setFfprobePath(ffprobePath);
 } catch {}
+
 const upload = require("../middleware/upload");
 const { uploadsDir, thumbnailsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
 
 const VIDEO_EXTS = new Set([".mp4", ".mov"]);
 
+/*
+  checkFileSignature — validates the file's magic bytes, not just its extension.
+  Users can rename any file to .jpg or .mp4 to bypass extension checks.
+  Magic bytes are the first few bytes of a real file that identify its true
+  format (e.g. JPEG always starts with FF D8 FF). This prevents uploading
+  malicious or corrupt files disguised as images or videos.
+*/
 function checkFileSignature(filePath, ext) {
   try {
     const buf = Buffer.alloc(12);
@@ -42,6 +58,12 @@ function checkFileSignature(filePath, ext) {
   }
 }
 
+/*
+  probeVideoCodec — reads the video codec without decoding the whole file.
+  Used before transcoding to check if the video is already H.264. If it is,
+  we can remux (copy streams) instead of re-encoding, which is much faster
+  and preserves quality. Only re-encodes when absolutely necessary.
+*/
 function probeVideoCodec(filePath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
@@ -52,6 +74,11 @@ function probeVideoCodec(filePath) {
   });
 }
 
+/*
+  probeVideoDuration — reads the video duration in seconds via ffprobe.
+  Used after upload to enforce the maximum video duration limit from config.json.
+  Runs after transcoding so the duration is accurate for the final output file.
+*/
 function probeVideoDuration(filePath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
@@ -62,6 +89,13 @@ function probeVideoDuration(filePath) {
   });
 }
 
+/*
+  generateThumbnail — extracts a single frame from a video as a JPEG preview.
+  -ss 1 seeks to 1 second in to avoid black title frames at the very start.
+  scale=320:-2 resizes to 320px wide, keeping aspect ratio with an even height
+  (required by some codecs). Thumbnails are stored in /thumbnails/<file>.jpg
+  and served to the dashboard so users can identify videos without playing them.
+*/
 function generateThumbnail(videoPath, outputPath) {
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
@@ -74,6 +108,14 @@ function generateThumbnail(videoPath, outputPath) {
   });
 }
 
+/*
+  transcodeToMp4 — converts a video to H.264 MP4, the only format browsers
+  can reliably play without plugins. MOV files are remuxed (stream copy) if
+  already H.264 since remuxing is near-instant and lossless. Non-H.264 videos
+  are re-encoded with libx264 + AAC at CRF 23 (good quality, reasonable size).
+  faststart moves the MP4 index to the front so browsers can start playing
+  before the full file is downloaded (important for large videos on slow Pi SD).
+*/
 function transcodeToMp4(inputPath, outputPath, copyStreams) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg(inputPath);
@@ -87,6 +129,14 @@ function transcodeToMp4(inputPath, outputPath, copyStreams) {
   });
 }
 
+/*
+  GET /api/media — returns the full file list with order, durations, and thumbnails.
+  Order is merged so files in order.json come first in the user's chosen sequence,
+  and any newly uploaded files not yet in order.json are appended at the end.
+  Thumbnail generation is triggered here for any video missing its thumbnail file,
+  so thumbnails appear automatically after a git pull + server restart on the Pi
+  without needing to re-upload the videos.
+*/
 router.get("/", (req, res) => {
   try {
     const durations = loadDurations();
@@ -118,6 +168,13 @@ router.get("/", (req, res) => {
   }
 });
 
+/*
+  currentlyShowing — in-memory store for which file is currently on screen.
+  The slideshow page (script.js) POSTs here every time it switches to a new
+  file. The dashboard polls GET /current every 2 seconds to highlight the
+  active file. Stored in memory (not a file) because it is live state that
+  only matters while the server is running; it resets to null on restart.
+*/
 let currentlyShowing = null;
 
 router.get("/current", (req, res) => {
@@ -129,6 +186,11 @@ router.post("/current", express.json(), (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+  PUT /api/media/order — saves the user's custom playback order.
+  path.basename strips any directory traversal (e.g. "../../etc/passwd")
+  from filenames before saving, preventing path injection through the order array.
+*/
 router.put("/order", express.json(), (req, res) => {
   const { order } = req.body;
   if (!Array.isArray(order)) {
@@ -143,6 +205,19 @@ router.put("/order", express.json(), (req, res) => {
   }
 });
 
+/*
+  POST /api/media — handles file upload with validation and video processing.
+  Steps in order:
+    1. Magic byte check — rejects corrupt or misnamed files immediately.
+    2. Transcode — converts any video to H.264 MP4 so the browser can play it.
+       MOV files and non-H.264 videos are converted; H.264 MP4s are left as-is.
+    3. Duration check — enforces the maxVideoDurationSeconds limit from config.json.
+       Runs after transcoding because the original file may be in a format ffprobe
+       cannot read accurately before conversion.
+    4. Persist duration — saves the user's chosen display duration for any file type.
+    5. Persist order — appends the new file to order.json so it keeps its position.
+    6. Generate thumbnail — fires async so the upload response is not delayed.
+*/
 router.post("/", upload.single("media"), async (req, res) => {
   try {
     if (!req.file) {
@@ -228,6 +303,12 @@ router.post("/", upload.single("media"), async (req, res) => {
   }
 });
 
+/*
+  PATCH /api/media/:filename/duration — updates the display duration for any file.
+  Duration is clamped between 5s and maxVideoDurationSeconds so the slideshow
+  never gets stuck on a single file indefinitely or advances too quickly to read.
+  Applies to both images and videos; images use this same value in the slideshow.
+*/
 router.patch("/:filename/duration", express.json(), (req, res) => {
   const safeFilename = path.basename(req.params.filename);
   const filePath = path.join(uploadsDir, safeFilename);
@@ -254,6 +335,12 @@ router.patch("/:filename/duration", express.json(), (req, res) => {
   }
 });
 
+/*
+  DELETE /api/media/:filename — removes a file and all its associated data.
+  Cleans up durations.json, order.json, and the thumbnail so no orphaned data
+  accumulates over time. The thumbnail delete is wrapped in try/catch because
+  images never have thumbnails and it should not cause the whole delete to fail.
+*/
 router.delete("/:filename", (req, res) => {
   const safeFilename = path.basename(req.params.filename);
   const filePath = path.join(uploadsDir, safeFilename);
@@ -287,6 +374,13 @@ router.delete("/:filename", (req, res) => {
   }
 });
 
+/*
+  Startup thumbnail scan — generates missing thumbnails for videos already on disk.
+  This runs once when the server starts, which covers the case where the Pi pulls
+  new code (or new thumbnails were deleted) and needs to rebuild them without
+  requiring the files to be re-uploaded. Generation is async and non-blocking
+  so the server is ready to serve requests immediately.
+*/
 (async () => {
   try {
     const files = fs.readdirSync(uploadsDir);

@@ -11,11 +11,22 @@ const dropIdle        = document.getElementById("dropIdle");
 const dropSelected    = document.getElementById("dropSelected");
 const filePreview     = document.getElementById("filePreview");
 
+/*
+  refreshInterval — how often the file list is reloaded from the server.
+  5 seconds keeps the dashboard in sync with changes made from other devices
+  (e.g. another tab or a future multi-user scenario) without overloading the Pi.
+*/
 const refreshInterval = 5000;
 let selectedFile = null;
 
 // ── Drop zone ─────────────────────────────────────────────────────────────
 
+/*
+  renderDropZone — switches the upload area between idle and preview states.
+  Once a file is selected the drop zone shows the filename, type, and size
+  instead of the upload prompt. This confirms the user picked the right file
+  before they click Upload, reducing accidental wrong-file uploads.
+*/
 function setSelectedFile(file) {
   selectedFile = file;
   renderDropZone();
@@ -70,6 +81,12 @@ function renderDropZone() {
   dropSelected.hidden = false;
 }
 
+/*
+  renderDurationRow — shows the duration slider when a file is selected.
+  Videos default to the max (60s from config), images default to imageDurationSeconds.
+  This is called every time the selected file changes so the slider always starts
+  at the right value for the file type being uploaded.
+*/
 function renderDurationRow() {
   if (!selectedFile) {
     durationRow.hidden = true;
@@ -121,6 +138,15 @@ videoDurationSlider.addEventListener("input", () => {
 
 // ── Duration popover ──────────────────────────────────────────────────────
 
+/*
+  openDurationEditor — shows a floating popover slider to edit a file's duration.
+  Uses PATCH /api/media/:filename/duration instead of re-uploading the file.
+  The popover is positioned below the badge and flips above it if there is not
+  enough space at the bottom of the viewport. Only one popover can be open at
+  a time; opening a new one closes the previous one automatically.
+  The setTimeout(0) on outside-click listeners prevents the same click that
+  opened the popover from immediately closing it.
+*/
 let activeDurationPopover = null;
 
 function closeDurationPopover() {
@@ -192,6 +218,7 @@ function openDurationEditor(badge, file, maxDuration) {
         showMessage(result.error || "Could not save duration.", "error");
         return;
       }
+      // Update in-place so the badge shows the new value without a full list reload
       file.duration = result.duration;
       badge.querySelector(".duration-badge__value").textContent = result.duration;
       showMessage(`Duration updated to ${result.duration}s.`, "success");
@@ -240,6 +267,12 @@ function updateOrderNumbers() {
   });
 }
 
+/*
+  persistOrder — saves the current DOM order of files to the server.
+  Called after every drag-and-drop so the slideshow picks up the new order
+  on its next refresh cycle. Without this the reorder only affects the dashboard
+  view and resets the next time loadFiles() runs.
+*/
 async function persistOrder() {
   const order = [...fileList.querySelectorAll(".file-item")].map(li => li.dataset.filename);
   try {
@@ -254,6 +287,15 @@ async function persistOrder() {
   }
 }
 
+/*
+  buildFileItem — creates a single <li> row for the media library.
+  Each row contains: drag handle, order number, thumbnail, file info,
+  "Live" badge (hidden unless active), duration badge, and delete button.
+  The thumbnail falls back to a file-type icon if the image fails to load,
+  which handles videos that haven't had their thumbnail generated yet.
+  data-filename is stored on the <li> so updateNowShowing() can match it
+  against the currently playing filename without re-fetching the file list.
+*/
 function buildFileItem(file, index, maxDuration) {
   const li = document.createElement("li");
   li.className = "file-item";
@@ -337,6 +379,16 @@ function buildFileItem(file, index, maxDuration) {
 
   li.appendChild(deleteBtn);
 
+  /*
+    Drag-to-reorder — custom pointer-based drag, not the native HTML drag API.
+    Native drag API has poor cross-browser behaviour for list reordering and
+    does not work in some kiosk/touch environments. This approach:
+      1. Clones the item as a "ghost" that follows the pointer visually.
+      2. Hides the original with drag-placeholder styling (keeps the space).
+      3. Inserts the real item before the first candidate whose midpoint is
+         below the pointer, so the list reorders in real time during drag.
+      4. On release, saves the new order to the server via persistOrder().
+  */
   const handle = li.querySelector(".drag-handle");
   handle.addEventListener("pointerdown", (e) => {
     e.preventDefault();
@@ -396,9 +448,22 @@ function buildFileItem(file, index, maxDuration) {
   return li;
 }
 
+/*
+  maxVideoDuration and defaultImageDuration are read from /api/config on every
+  loadFiles() call so that changes to config.json take effect without restarting
+  the server or refreshing the page. They are used as the defaults for duration
+  badges and the upload slider.
+*/
 let maxVideoDuration = 60;
 let defaultImageDuration = 10;
 
+/*
+  loadFiles — fetches the media list and config together, then rebuilds the
+  file list DOM. Both requests run in parallel (Promise.all) to save time.
+  After building the list, updateNowShowing() is called immediately so the
+  active file is highlighted right away instead of waiting up to 2 seconds
+  for the next polling interval to fire.
+*/
 async function loadFiles() {
   try {
     const [mediaRes, configRes] = await Promise.all([
@@ -449,6 +514,13 @@ function showMessage(text, type = "info") {
   uploadMessage.className = `upload-msg upload-msg--${type}`;
 }
 
+/*
+  Upload handler — validates the file on the client before sending to the server.
+  Client-side checks (extension, size) give instant feedback without a network
+  round-trip. The server still validates independently, so these are a UX layer
+  only, not a security boundary. Duration is always sent for both images and
+  videos so the slideshow knows how long to show each file.
+*/
 uploadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -498,6 +570,14 @@ uploadForm.addEventListener("submit", async (e) => {
   }
 });
 
+/*
+  updateNowShowing — polls the server for the currently playing file and
+  applies the .file-item--active class to the matching row.
+  This is called both on the 2-second interval AND immediately after loadFiles()
+  rebuilds the DOM, because loadFiles() wipes all classes with innerHTML = "".
+  Without the immediate call after loadFiles(), the active highlight would
+  disappear for up to 2 seconds every time the list refreshes.
+*/
 async function updateNowShowing() {
   try {
     const res = await fetch("/api/media/current");

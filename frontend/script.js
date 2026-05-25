@@ -1,7 +1,3 @@
-/*
-  Slideshow frontend logic.
-  This file controls what is shown on the A3 info screen.
-*/
 const mediaArea = document.getElementById("mediaArea");
 
 let mediaFiles = [];
@@ -10,10 +6,18 @@ let imageTimer = null;
 let videoTimer = null;
 let imageDuration = 10000;
 let currentVideoEl = null;
+
+/*
+  Refresh interval for pulling updated media and config from the server.
+  5 seconds is frequent enough for changes to appear quickly but not so fast
+  it hammers the Pi's CPU with constant file system reads.
+*/
 const refreshInterval = 5000;
 
 /*
-  Updates the clock shown at the bottom of the slideshow screen.
+  updateClock — updates the date/time display at the bottom of the screen.
+  en-GB locale gives "Monday, 25/05/2026" and 24-hour time, which matches
+  Finnish convention and avoids AM/PM confusion on a public display.
 */
 function updateClock() {
   const clockElement = document.getElementById("clock");
@@ -37,8 +41,9 @@ function updateClock() {
 }
 
 /*
-  Loads slideshow settings from the backend.
-  This makes image duration configurable through config.json.
+  loadConfig — fetches imageDurationSeconds from the backend config.
+  This makes the default image display time configurable through config.json
+  without editing code. Falls back to 10 seconds on any error.
 */
 async function loadConfig() {
   try {
@@ -55,8 +60,19 @@ async function loadConfig() {
 }
 
 /*
-  Loads the uploaded media list from the backend.
-  The slideshow uses this list to decide which image or video to show.
+  loadMediaFiles — fetches the current file list from the server and updates
+  the slideshow state without interrupting what is currently playing.
+
+  On every refresh it handles three scenarios:
+    1. Current file was deleted → skip to its former index position immediately.
+    2. File order changed → keep currentIndex pointing at the same filename.
+    3. Duration changed for the playing video → recalculate the remaining timer
+       from currentVideoEl.currentTime so the change takes effect live without
+       waiting for the next file transition.
+
+  Tracking by filename (not index) is important because the user can reorder
+  files in the dashboard at any time, so the same index may point to a
+  different file after a refresh.
 */
 async function loadMediaFiles(firstLoad = false) {
   try {
@@ -136,7 +152,11 @@ async function loadMediaFiles(firstLoad = false) {
 }
 
 /*
-  Shows a default message when no media has been uploaded yet.
+  reportCurrent — tells the server which file is currently on screen.
+  The dashboard polls GET /api/media/current every 2 seconds and uses this
+  value to highlight the active file in the media library. Without this POST,
+  the dashboard never knows what is playing and the "Live" indicator stays off.
+  Errors are silently swallowed so a network hiccup does not interrupt playback.
 */
 function reportCurrent(name) {
   fetch("/api/media/current", {
@@ -160,9 +180,18 @@ function showPlaceholder() {
 }
 
 /*
-  Displays the current media item.
-  Images stay on screen for the configured duration.
-  Videos play until they finish.
+  showCurrentMedia — renders the current file and sets the timer to advance
+  to the next one when it is time.
+
+  For images: uses the per-file duration from durations.json if set,
+  otherwise falls back to imageDuration from config.
+  For videos: plays until the video ends naturally (onended), or until the
+  per-file duration timer fires — whichever comes first. The timer is started
+  on the "play" event (not immediately) so it counts from when the video
+  actually starts playing, not from when the element was created.
+
+  currentVideoEl is kept so loadMediaFiles can recalculate a live timer
+  change using the video's current playback position.
 */
 function showCurrentMedia() {
   clearTimeout(imageTimer);
@@ -223,9 +252,6 @@ function showCurrentMedia() {
   }
 }
 
-/*
-  Moves the slideshow to the next uploaded media item.
-*/
 function showNextMedia() {
   if (mediaFiles.length === 0) {
     showPlaceholder();
@@ -236,7 +262,10 @@ function showNextMedia() {
 }
 
 /*
-  Starts the slideshow by loading settings first and then loading media files.
+  startSlideshow — entry point. Config is loaded first so imageDuration is set
+  correctly before the first file is displayed. If loadConfig is skipped the
+  first image would always show for the hardcoded 10s default even if config.json
+  says otherwise.
 */
 async function startSlideshow() {
   await loadConfig();
@@ -248,10 +277,6 @@ setInterval(updateClock, 1000);
 
 startSlideshow();
 
-/*
-  Checks for updated settings and new media regularly.
-  This lets the info screen update without manual refresh.
-*/
 setInterval(() => {
   loadConfig();
   loadMediaFiles(false);
