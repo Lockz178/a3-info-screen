@@ -4,7 +4,7 @@ const fs = require("fs");
 const router = express.Router();
 const ffmpeg = require("fluent-ffmpeg");
 const upload = require("../middleware/upload");
-const { uploadsDir, loadDurations, saveDurations, loadOrder, saveOrder } = require("../utils/fileHelpers");
+const { uploadsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
 
 const VIDEO_EXTS = new Set([".mp4", ".mov"]);
 
@@ -40,6 +40,16 @@ function probeVideoCodec(filePath) {
       if (err) return reject(err);
       const stream = metadata.streams.find(s => s.codec_type === "video");
       resolve(stream ? stream.codec_name : null);
+    });
+  });
+}
+
+function probeVideoDuration(filePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) return reject(err);
+      const duration = metadata.format && metadata.format.duration;
+      resolve(duration != null ? parseFloat(duration) : null);
     });
   });
 }
@@ -85,8 +95,9 @@ router.put("/order", express.json(), (req, res) => {
   if (!Array.isArray(order)) {
     return res.status(400).json({ error: "order must be an array" });
   }
+  const sanitized = order.map(f => path.basename(String(f))).filter(f => f && f !== "." && f !== "..");
   try {
-    saveOrder(order);
+    saveOrder(sanitized);
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: "Could not save order." });
@@ -94,70 +105,83 @@ router.put("/order", express.json(), (req, res) => {
 });
 
 router.post("/", upload.single("media"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file received." });
-  }
-
-  let ext = path.extname(req.file.filename).toLowerCase();
-  let filePath = path.join(uploadsDir, req.file.filename);
-  let filename = req.file.filename;
-
-  if (!checkFileSignature(filePath, ext)) {
-    try { fs.unlinkSync(filePath); } catch {}
-    return res.status(400).json({
-      error: `File appears corrupted or is not a valid ${ext.slice(1).toUpperCase()} file.`,
-    });
-  }
-
-  if (VIDEO_EXTS.has(ext)) {
-    try {
-      const codec = await probeVideoCodec(filePath);
-      const isH264 = codec === "h264";
-      const needsRemux = ext === ".mov";
-
-      if (!isH264 || needsRemux) {
-        const newFilename = filename.slice(0, filename.lastIndexOf(".")) + ".mp4";
-        const newFilePath = path.join(uploadsDir, newFilename);
-        try {
-          await transcodeToMp4(filePath, newFilePath, isH264);
-          try { fs.unlinkSync(filePath); } catch {}
-          filename = newFilename;
-          filePath = newFilePath;
-          ext = ".mp4";
-        } catch {
-          try { fs.unlinkSync(newFilePath); } catch {}
-          try { fs.unlinkSync(filePath); } catch {}
-          return res.status(500).json({ error: "Video processing failed. The format may not be supported." });
-        }
-      }
-    } catch {
-      // ffprobe not available — skip transcoding, keep original
-    }
-  }
-
-  if (VIDEO_EXTS.has(ext) && req.body.duration) {
-    const duration = Math.max(5, Math.min(60, parseInt(req.body.duration)));
-    if (!isNaN(duration)) {
-      try {
-        const durations = loadDurations();
-        durations[filename] = duration;
-        saveDurations(durations);
-      } catch (e) {}
-    }
-  }
-
   try {
-    const order = loadOrder();
-    if (!order.includes(filename)) {
-      order.push(filename);
-      saveOrder(order);
+    if (!req.file) {
+      return res.status(400).json({ error: "No file received." });
     }
-  } catch (e) {}
 
-  res.status(201).json({
-    message: "File uploaded successfully",
-    file: filename,
-  });
+    let ext = path.extname(req.file.filename).toLowerCase();
+    let filePath = path.join(uploadsDir, req.file.filename);
+    let filename = req.file.filename;
+
+    if (!checkFileSignature(filePath, ext)) {
+      try { fs.unlinkSync(filePath); } catch {}
+      return res.status(400).json({
+        error: `File appears corrupted or is not a valid ${ext.slice(1).toUpperCase()} file.`,
+      });
+    }
+
+    if (VIDEO_EXTS.has(ext)) {
+      try {
+        const codec = await probeVideoCodec(filePath);
+        const isH264 = codec === "h264";
+        const needsRemux = ext === ".mov";
+
+        if (!isH264 || needsRemux) {
+          const newFilename = filename.slice(0, filename.lastIndexOf(".")) + ".mp4";
+          const newFilePath = path.join(uploadsDir, newFilename);
+          try {
+            await transcodeToMp4(filePath, newFilePath, isH264);
+            try { fs.unlinkSync(filePath); } catch {}
+            filename = newFilename;
+            filePath = newFilePath;
+            ext = ".mp4";
+          } catch {
+            try { fs.unlinkSync(newFilePath); } catch {}
+            try { fs.unlinkSync(filePath); } catch {}
+            return res.status(500).json({ error: "Video processing failed. The format may not be supported." });
+          }
+        }
+
+        const maxDuration = (loadConfig().maxVideoDurationSeconds) || 60;
+        const videoDurationSecs = await probeVideoDuration(filePath);
+        if (videoDurationSecs !== null && videoDurationSecs > maxDuration) {
+          try { fs.unlinkSync(filePath); } catch {}
+          return res.status(400).json({
+            error: `Video is too long (${Math.round(videoDurationSecs)}s). Maximum allowed is ${maxDuration} seconds.`,
+          });
+        }
+      } catch {
+        // ffprobe not available — skip transcoding and duration check
+      }
+    }
+
+    if (VIDEO_EXTS.has(ext) && req.body.duration) {
+      const duration = Math.max(5, Math.min(60, parseInt(req.body.duration)));
+      if (!isNaN(duration)) {
+        try {
+          const durations = loadDurations();
+          durations[filename] = duration;
+          saveDurations(durations);
+        } catch (e) {}
+      }
+    }
+
+    try {
+      const order = loadOrder();
+      if (!order.includes(filename)) {
+        order.push(filename);
+        saveOrder(order);
+      }
+    } catch (e) {}
+
+    res.status(201).json({
+      message: "File uploaded successfully",
+      file: filename,
+    });
+  } catch (e) {
+    res.status(500).json({ error: "An unexpected error occurred during upload." });
+  }
 });
 
 router.delete("/:filename", (req, res) => {

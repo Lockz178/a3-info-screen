@@ -144,12 +144,15 @@ function updateOrderNumbers() {
 async function persistOrder() {
   const order = [...fileList.querySelectorAll(".file-item")].map(li => li.dataset.filename);
   try {
-    await fetch("/api/media/order", {
+    const res = await fetch("/api/media/order", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order }),
     });
-  } catch {}
+    if (!res.ok) showMessage("Order could not be saved. It will reset on next refresh.", "error");
+  } catch {
+    showMessage("Order could not be saved. Please check your connection.", "error");
+  }
 }
 
 function buildFileItem(file, index) {
@@ -192,7 +195,8 @@ function buildFileItem(file, index) {
     if (!confirm(`Delete ${file.name}?`)) return;
     try {
       const res = await fetch(`/api/media/${encodeURIComponent(file.name)}`, { method: "DELETE" });
-      const result = await res.json();
+      let result;
+      try { result = await res.json(); } catch { result = {}; }
       if (!res.ok) { showMessage(result.error || "Delete failed.", "error"); return; }
       showMessage(`Deleted: ${result.file}`, "success");
       await loadFiles();

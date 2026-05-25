@@ -1,3 +1,4 @@
 {
-  "imageDurationSeconds": 10
+  "imageDurationSeconds": 10,
+  "maxVideoDurationSeconds": 60
 }

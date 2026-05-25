@@ -42,6 +42,7 @@ function updateClock() {
 async function loadConfig() {
   try {
     const response = await fetch("/api/config");
+    if (!response.ok) return;
     const config = await response.json();
 
     if (config.imageDurationSeconds) {
@@ -59,6 +60,17 @@ async function loadConfig() {
 async function loadMediaFiles(firstLoad = false) {
   try {
     const response = await fetch("/api/media");
+    if (!response.ok) {
+      if (firstLoad) {
+        mediaArea.innerHTML = `
+          <div class="placeholder">
+            <h1>Error loading media</h1>
+            <p>Server returned an error. Please check the server.</p>
+          </div>
+        `;
+      }
+      return;
+    }
     const newMediaFiles = await response.json();
 
     const wasEmpty = mediaFiles.length === 0;
@@ -167,6 +179,10 @@ function showCurrentMedia() {
   Moves the slideshow to the next uploaded media item.
 */
 function showNextMedia() {
+  if (mediaFiles.length === 0) {
+    showPlaceholder();
+    return;
+  }
   currentIndex = (currentIndex + 1) % mediaFiles.length;
   showCurrentMedia();
 }

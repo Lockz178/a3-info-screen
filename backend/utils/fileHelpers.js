@@ -37,7 +37,7 @@ function saveOrder(order) {
 }
 
 function loadConfig() {
-  const defaults = { imageDurationSeconds: 10 };
+  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60 };
   if (!fs.existsSync(configPath)) return defaults;
   try {
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
