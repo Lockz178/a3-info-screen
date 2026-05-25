@@ -454,16 +454,27 @@ input[type="range"] {
 
 .file-item--active {
   border-color: #82c8f0;
-  background: linear-gradient(135deg, #0a1a2e 0%, #0d001a 100%);
-  box-shadow: 0 0 0 1px #82c8f0 inset, 0 4px 24px rgba(130, 200, 240, 0.2);
+  background: #071824;
+  box-shadow: -4px 0 0 #82c8f0, 0 0 24px rgba(130, 200, 240, 0.15);
+  border-left-width: 0;
+  padding-left: 18px;
 }
 
 .file-item--active .file-item__name {
   color: #ffffff;
 }
 
+.file-item--active .file-item__meta {
+  color: #82c8f0;
+}
+
 .file-item--active .file-item__order {
   color: #82c8f0;
+  font-weight: 800;
+}
+
+.file-item--active .drag-handle {
+  color: #2d4a5a;
 }
 
 .now-showing-badge {
