@@ -3,6 +3,10 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 const ffmpeg = require("fluent-ffmpeg");
+const ffmpegPath = require("ffmpeg-static");
+const ffprobePath = require("@ffprobe-installer/ffprobe").path;
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
 const upload = require("../middleware/upload");
 const { uploadsDir, thumbnailsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
 
