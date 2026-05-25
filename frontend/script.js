@@ -9,6 +9,7 @@ let currentIndex = 0;
 let imageTimer = null;
 let videoTimer = null;
 let imageDuration = 10000;
+let currentVideoEl = null;
 const refreshInterval = 5000;
 
 /*
@@ -74,6 +75,8 @@ async function loadMediaFiles(firstLoad = false) {
     const newMediaFiles = await response.json();
 
     const wasEmpty = mediaFiles.length === 0;
+    const currentFile = mediaFiles[currentIndex] ?? null;
+
     mediaFiles = newMediaFiles;
 
     if (mediaFiles.length === 0) {
@@ -81,13 +84,46 @@ async function loadMediaFiles(firstLoad = false) {
       return;
     }
 
-    if (currentIndex >= mediaFiles.length) {
-      currentIndex = 0;
-    }
-
     if (firstLoad || wasEmpty) {
       currentIndex = 0;
       showCurrentMedia();
+      return;
+    }
+
+    // Current file was deleted — skip to its former position immediately
+    if (currentFile && !mediaFiles.find(f => f.name === currentFile.name)) {
+      currentIndex = currentIndex % mediaFiles.length;
+      showCurrentMedia();
+      return;
+    }
+
+    // Keep currentIndex tracking the same file even if order changed
+    if (currentFile) {
+      const newIdx = mediaFiles.findIndex(f => f.name === currentFile.name);
+      if (newIdx !== -1) currentIndex = newIdx;
+    }
+
+    if (currentIndex >= mediaFiles.length) currentIndex = 0;
+
+    // Duration changed for the currently playing video — update the timer live
+    if (currentVideoEl && currentFile) {
+      const updatedFile = mediaFiles[currentIndex];
+      if (updatedFile && updatedFile.duration !== currentFile.duration) {
+        clearTimeout(videoTimer);
+        if (updatedFile.duration != null) {
+          const elapsed = currentVideoEl.currentTime;
+          const remaining = Math.max(0, updatedFile.duration - elapsed);
+          if (remaining <= 0) {
+            currentVideoEl.pause();
+            showNextMedia();
+          } else {
+            videoTimer = setTimeout(() => {
+              currentVideoEl.pause();
+              showNextMedia();
+            }, remaining * 1000);
+          }
+        }
+      }
     }
   } catch (error) {
     mediaArea.innerHTML = `
@@ -132,6 +168,7 @@ function showCurrentMedia() {
   const isVideo = file.type === ".mp4" || file.type === ".mov";
 
   mediaArea.innerHTML = "";
+  currentVideoEl = null;
 
   if (isVideo) {
     const video = document.createElement("video");
@@ -140,6 +177,7 @@ function showCurrentMedia() {
     video.muted = true;
     video.controls = false;
     video.className = "media-item";
+    currentVideoEl = video;
 
     video.onended = () => {
       clearTimeout(videoTimer);
