@@ -101,7 +101,11 @@ router.get("/", (req, res) => {
       const item = { name: file, url: `/uploads/${file}`, type: ext };
       if (VIDEO_EXTS.has(ext)) {
         const thumbPath = path.join(thumbnailsDir, file + ".jpg");
-        if (fs.existsSync(thumbPath)) item.thumbnail = `/thumbnails/${file}.jpg`;
+        if (fs.existsSync(thumbPath)) {
+          item.thumbnail = `/thumbnails/${file}.jpg`;
+        } else {
+          generateThumbnail(path.join(uploadsDir, file), thumbPath).catch(() => {});
+        }
       } else {
         item.thumbnail = `/uploads/${file}`;
       }

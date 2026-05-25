@@ -453,11 +453,9 @@ input[type="range"] {
 }
 
 .file-item--active {
-  border-color: #82c8f0;
-  background: #071824;
-  box-shadow: -4px 0 0 #82c8f0, 0 0 24px rgba(130, 200, 240, 0.15);
-  border-left-width: 0;
-  padding-left: 18px;
+  background: #3a0078;
+  border-color: #c084fc;
+  box-shadow: 0 0 0 1px #c084fc inset, 0 0 28px rgba(192, 132, 252, 0.45);
 }
 
 .file-item--active .file-item__name {
@@ -465,16 +463,16 @@ input[type="range"] {
 }
 
 .file-item--active .file-item__meta {
-  color: #82c8f0;
+  color: #e0b8ff;
 }
 
 .file-item--active .file-item__order {
-  color: #82c8f0;
+  color: #ffffff;
   font-weight: 800;
 }
 
 .file-item--active .drag-handle {
-  color: #2d4a5a;
+  color: #9b5de5;
 }
 
 .now-showing-badge {
