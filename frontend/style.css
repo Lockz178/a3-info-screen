@@ -208,6 +208,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  align-items: center;
+}
+
+#uploadForm > :not(button) {
+  width: 100%;
 }
 
 #mediaFile {
