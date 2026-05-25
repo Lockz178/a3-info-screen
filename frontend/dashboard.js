@@ -75,14 +75,12 @@ function renderDurationRow() {
     durationRow.hidden = true;
     return;
   }
+  durationRow.hidden = false;
   const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
-  if (ext === ".mp4" || ext === ".mov") {
-    durationRow.hidden = false;
-  } else {
-    durationRow.hidden = true;
-    videoDurationSlider.value = 60;
-    videoDurationValue.textContent = "60";
-  }
+  const isVideo = ext === ".mp4" || ext === ".mov";
+  const defaultVal = isVideo ? 60 : defaultImageDuration;
+  videoDurationSlider.value = defaultVal;
+  videoDurationValue.textContent = defaultVal;
 }
 
 dropZone.addEventListener("click", (e) => {
@@ -294,20 +292,19 @@ function buildFileItem(file, index, maxDuration) {
     };
   }
 
-  if (isVideo) {
-    const badge = document.createElement("span");
-    badge.className = "duration-badge";
-    badge.title = "Click to edit display duration";
-    badge.innerHTML = `
-      <span class="duration-badge__value">${file.duration ?? maxDuration}</span>s
-      <svg class="duration-badge__edit-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg>
-    `;
-    badge.addEventListener("click", () => openDurationEditor(badge, file, maxDuration));
-    li.appendChild(badge);
-  }
+  const badgeDefault = isVideo ? (file.duration ?? maxDuration) : (file.duration ?? defaultImageDuration);
+  const badge = document.createElement("span");
+  badge.className = "duration-badge";
+  badge.title = "Click to edit display duration";
+  badge.innerHTML = `
+    <span class="duration-badge__value">${badgeDefault}</span>s
+    <svg class="duration-badge__edit-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  `;
+  badge.addEventListener("click", () => openDurationEditor(badge, file, maxDuration));
+  li.appendChild(badge);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "button button--delete";
@@ -396,6 +393,7 @@ function buildFileItem(file, index, maxDuration) {
 }
 
 let maxVideoDuration = 60;
+let defaultImageDuration = 10;
 
 async function loadFiles() {
   try {
@@ -407,6 +405,7 @@ async function loadFiles() {
     if (configRes.ok) {
       const cfg = await configRes.json().catch(() => ({}));
       if (cfg.maxVideoDurationSeconds) maxVideoDuration = cfg.maxVideoDurationSeconds;
+      if (cfg.imageDurationSeconds) defaultImageDuration = cfg.imageDurationSeconds;
     }
 
     if (!mediaRes.ok) {
@@ -468,10 +467,10 @@ uploadForm.addEventListener("submit", async (e) => {
 
   const formData = new FormData();
   formData.append("media", selectedFile);
-  if (fileExt === ".mp4" || fileExt === ".mov") formData.append("duration", videoDurationSlider.value);
+  formData.append("duration", videoDurationSlider.value);
 
   const isVideo = fileExt === ".mp4" || fileExt === ".mov";
-  showMessage(isVideo ? "Uploading and processing video, please wait…" : "Uploading…", "info");
+  showMessage(isVideo ? "Uploading and processing video, please wait…" : "Uploading image…", "info");
   document.getElementById("uploadBtn").disabled = true;
 
   try {

@@ -209,7 +209,7 @@ function showCurrentMedia() {
 
     mediaArea.appendChild(image);
 
-    imageTimer = setTimeout(showNextMedia, imageDuration);
+    imageTimer = setTimeout(showNextMedia, file.duration != null ? file.duration * 1000 : imageDuration);
   }
 }
 

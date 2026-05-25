@@ -96,12 +96,12 @@ router.get("/", (req, res) => {
       const ext = path.extname(file).toLowerCase();
       const item = { name: file, url: `/uploads/${file}`, type: ext };
       if (VIDEO_EXTS.has(ext)) {
-        if (durations[file] != null) item.duration = durations[file];
         const thumbPath = path.join(thumbnailsDir, file + ".jpg");
         if (fs.existsSync(thumbPath)) item.thumbnail = `/thumbnails/${file}.jpg`;
       } else {
         item.thumbnail = `/uploads/${file}`;
       }
+      if (durations[file] != null) item.duration = durations[file];
       return item;
     });
     res.status(200).json(files);
@@ -176,7 +176,7 @@ router.post("/", upload.single("media"), async (req, res) => {
       }
     }
 
-    if (VIDEO_EXTS.has(ext) && req.body.duration) {
+    if (req.body.duration) {
       const duration = Math.max(5, Math.min(60, parseInt(req.body.duration)));
       if (!isNaN(duration)) {
         try {
@@ -217,10 +217,6 @@ router.patch("/:filename/duration", express.json(), (req, res) => {
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "File not found." });
   }
-  if (!VIDEO_EXTS.has(ext)) {
-    return res.status(400).json({ error: "Duration can only be set for video files." });
-  }
-
   const raw = parseInt(req.body.duration);
   if (isNaN(raw)) {
     return res.status(400).json({ error: "duration must be a number." });
