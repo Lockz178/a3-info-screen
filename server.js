@@ -9,6 +9,7 @@ const HOST = "0.0.0.0";
 
 app.use(express.static(path.join(__dirname, "frontend")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/thumbnails", express.static(path.join(__dirname, "thumbnails")));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "A3 Info Screen server is running" });

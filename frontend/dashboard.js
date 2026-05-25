@@ -273,12 +273,26 @@ function buildFileItem(file, index, maxDuration) {
       </svg>
     </div>
     <span class="file-item__order">${index + 1}</span>
-    <div class="file-item__icon file-item__icon--${isVideo ? "video" : "image"}">${fileIcon(ext)}</div>
+    <div class="file-item__thumb file-item__thumb--${isVideo ? "video" : "image"}">
+      ${file.thumbnail
+        ? `<img class="file-item__thumb-img" src="${file.thumbnail}" alt="">`
+        : `<div class="file-item__thumb-icon">${fileIcon(ext)}</div>`}
+    </div>
     <div class="file-item__info">
       <span class="file-item__name" title="${file.name}">${file.name}</span>
       <span class="file-item__meta">${ext.slice(1).toUpperCase()}</span>
     </div>
   `;
+
+  if (file.thumbnail) {
+    const img = li.querySelector(".file-item__thumb-img");
+    img.onerror = () => {
+      img.replaceWith(Object.assign(document.createElement("div"), {
+        className: "file-item__thumb-icon",
+        innerHTML: fileIcon(ext),
+      }));
+    };
+  }
 
   if (isVideo) {
     const badge = document.createElement("span");

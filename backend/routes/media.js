@@ -4,7 +4,7 @@ const fs = require("fs");
 const router = express.Router();
 const ffmpeg = require("fluent-ffmpeg");
 const upload = require("../middleware/upload");
-const { uploadsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
+const { uploadsDir, thumbnailsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
 
 const VIDEO_EXTS = new Set([".mp4", ".mov"]);
 
@@ -54,6 +54,18 @@ function probeVideoDuration(filePath) {
   });
 }
 
+function generateThumbnail(videoPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .inputOptions(["-ss 1"])
+      .outputOptions(["-vframes 1", "-vf scale=320:-2"])
+      .output(outputPath)
+      .on("end", resolve)
+      .on("error", reject)
+      .run();
+  });
+}
+
 function transcodeToMp4(inputPath, outputPath, copyStreams) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg(inputPath);
@@ -79,8 +91,12 @@ router.get("/", (req, res) => {
     const files = ordered.map((file) => {
       const ext = path.extname(file).toLowerCase();
       const item = { name: file, url: `/uploads/${file}`, type: ext };
-      if (VIDEO_EXTS.has(ext) && durations[file] != null) {
-        item.duration = durations[file];
+      if (VIDEO_EXTS.has(ext)) {
+        if (durations[file] != null) item.duration = durations[file];
+        const thumbPath = path.join(thumbnailsDir, file + ".jpg");
+        if (fs.existsSync(thumbPath)) item.thumbnail = `/thumbnails/${file}.jpg`;
+      } else {
+        item.thumbnail = `/uploads/${file}`;
       }
       return item;
     });
@@ -175,6 +191,11 @@ router.post("/", upload.single("media"), async (req, res) => {
       }
     } catch (e) {}
 
+    if (VIDEO_EXTS.has(ext)) {
+      const thumbPath = path.join(thumbnailsDir, filename + ".jpg");
+      generateThumbnail(filePath, thumbPath).catch(() => {});
+    }
+
     res.status(201).json({
       message: "File uploaded successfully",
       file: filename,
@@ -238,10 +259,26 @@ router.delete("/:filename", (req, res) => {
       saveOrder(order);
     }
 
+    const thumbPath = path.join(thumbnailsDir, safeFilename + ".jpg");
+    try { fs.unlinkSync(thumbPath); } catch {}
+
     res.status(200).json({ message: "File deleted successfully", file: safeFilename });
   } catch (e) {
     res.status(500).json({ error: "Could not delete file." });
   }
 });
+
+(async () => {
+  try {
+    const files = fs.readdirSync(uploadsDir);
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      if (!VIDEO_EXTS.has(ext)) continue;
+      const thumbPath = path.join(thumbnailsDir, file + ".jpg");
+      if (fs.existsSync(thumbPath)) continue;
+      generateThumbnail(path.join(uploadsDir, file), thumbPath).catch(() => {});
+    }
+  } catch {}
+})();
 
 module.exports = router;

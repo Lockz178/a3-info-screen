@@ -2,13 +2,13 @@ const path = require("path");
 const fs = require("fs");
 
 const uploadsDir = path.join(__dirname, "../../uploads");
+const thumbnailsDir = path.join(__dirname, "../../thumbnails");
 const configPath = path.join(__dirname, "../../config.json");
 const durationsPath = path.join(__dirname, "../../durations.json");
 const orderPath = path.join(__dirname, "../../order.json");
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir);
 
 function loadDurations() {
   if (!fs.existsSync(durationsPath)) return {};
@@ -47,4 +47,4 @@ function loadConfig() {
   }
 }
 
-module.exports = { uploadsDir, configPath, durationsPath, orderPath, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig };
+module.exports = { uploadsDir, thumbnailsDir, configPath, durationsPath, orderPath, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig };
