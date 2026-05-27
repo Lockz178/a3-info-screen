@@ -1,5 +1,6 @@
 {
   "imageDurationSeconds": 10,
   "maxVideoDurationSeconds": 60,
-  "dashboardPassword": ""
+  "dashboardPassword": "",
+  "qrUrl": ""
 }

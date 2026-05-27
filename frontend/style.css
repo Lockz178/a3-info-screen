@@ -1333,3 +1333,179 @@ input[type="range"] {
   background: #f3eaff;
   border-color: #4e008e;
 }
+
+
+/* ── Visibility toggle ───────────────────────────────────────────────────── */
+
+.file-toggle {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1.5px solid;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.file-toggle--on {
+  color: #27ae60;
+  border-color: #27ae60;
+}
+
+.file-toggle--off {
+  color: #aaa;
+  border-color: #ddd;
+}
+
+.file-item--disabled {
+  opacity: 0.45;
+}
+
+/* ── Alert overlay (slideshow screen) ───────────────────────────────────── */
+
+.alert-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(78, 0, 142, 0.93);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 60px;
+}
+
+.alert-overlay__text {
+  color: #fff;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* ── Alert card (dashboard) ─────────────────────────────────────────────── */
+
+.alert-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alert-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alert-current {
+  background: #fef6e4;
+  border: 1.5px solid #f0c060;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  color: #7a5500;
+  margin-bottom: 4px;
+}
+
+/* ── Action buttons (alert, QR) ─────────────────────────────────────────── */
+
+.dash-action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #d0bfe8;
+  background: transparent;
+  color: #4e008e;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.dash-action-btn:hover {
+  background: #f3eaff;
+  border-color: #4e008e;
+}
+
+.dash-action-btn--primary {
+  background: #4e008e;
+  color: #fff;
+  border-color: #4e008e;
+}
+
+.dash-action-btn--primary:hover {
+  background: #3a0069;
+  border-color: #3a0069;
+}
+
+.dash-action-btn--danger {
+  color: #c0392b;
+  border-color: #e8b4b0;
+}
+
+.dash-action-btn--danger:hover {
+  background: #fdf0ef;
+  border-color: #c0392b;
+}
+
+/* ── QR card (dashboard) ────────────────────────────────────────────────── */
+
+.qr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── QR code (slideshow screen) ─────────────────────────────────────────── */
+
+.qr-code {
+  position: absolute;
+  bottom: 56px;
+  right: 20px;
+  width: 110px;
+  height: 110px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+
+/* ── Multi-file drop zone ───────────────────────────────────────────────── */
+
+.multi-file-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.multi-file-count {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4e008e;
+}
+
+.multi-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.multi-file-item {
+  font-size: 0.82rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multi-file-meta {
+  color: #aaa;
+  font-size: 0.78rem;
+}

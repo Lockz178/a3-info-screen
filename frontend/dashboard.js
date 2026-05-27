@@ -42,85 +42,109 @@ const filePreview     = document.getElementById("filePreview");
   (e.g. another tab or a future multi-user scenario) without overloading the Pi.
 */
 const refreshInterval = 5000;
-let selectedFile = null;
+let selectedFiles = [];
 
 // ── Drop zone ─────────────────────────────────────────────────────────────
 
 /*
-  renderDropZone — switches the upload area between idle and preview states.
-  Once a file is selected the drop zone shows the filename, type, and size
-  instead of the upload prompt. This confirms the user picked the right file
-  before they click Upload, reducing accidental wrong-file uploads.
+  setSelectedFiles — updates the selected files array and re-renders the drop
+  zone. Supports single or multiple files. Duration slider is shown only when
+  a single file is selected (multiple uploads use each file's default duration).
 */
-function setSelectedFile(file) {
-  selectedFile = file;
+function setSelectedFiles(files) {
+  selectedFiles = Array.from(files);
   renderDropZone();
   renderDurationRow();
 }
 
-function clearSelectedFile() {
-  selectedFile = null;
+function clearSelectedFiles() {
+  selectedFiles = [];
   mediaFileInput.value = "";
   renderDropZone();
   renderDurationRow();
 }
 
 function renderDropZone() {
-  if (!selectedFile) {
+  if (selectedFiles.length === 0) {
     dropIdle.hidden = false;
     dropSelected.hidden = true;
     return;
   }
 
-  const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
-  const isVideo = ext === ".mp4" || ext === ".mov";
-  const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(1);
-
-  const icon = isVideo
-    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-       </svg>`
-    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-       </svg>`;
-
-  filePreview.innerHTML = `
-    <div class="file-preview__icon file-preview__icon--${isVideo ? "video" : "image"}">${icon}</div>
-    <div class="file-preview__info">
-      <span class="file-preview__name">${selectedFile.name}</span>
-      <span class="file-preview__meta">${ext.slice(1).toUpperCase()} &middot; ${sizeMB} MB</span>
-    </div>
-    <button type="button" class="file-preview__clear" id="clearFileBtn" aria-label="Remove selected file">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-  `;
-
-  document.getElementById("clearFileBtn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    clearSelectedFile();
-  });
-
   dropIdle.hidden = true;
   dropSelected.hidden = false;
+
+  if (selectedFiles.length === 1) {
+    const file = selectedFiles[0];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    const isVideo = ext === ".mp4" || ext === ".mov";
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+
+    const icon = isVideo
+      ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+         </svg>`
+      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+         </svg>`;
+
+    filePreview.innerHTML = `
+      <div class="file-preview__icon file-preview__icon--${isVideo ? "video" : "image"}">${icon}</div>
+      <div class="file-preview__info">
+        <span class="file-preview__name">${file.name}</span>
+        <span class="file-preview__meta">${ext.slice(1).toUpperCase()} &middot; ${sizeMB} MB</span>
+      </div>
+      <button type="button" class="file-preview__clear" id="clearFileBtn" aria-label="Remove selected file">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    `;
+    document.getElementById("clearFileBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearSelectedFiles();
+    });
+  } else {
+    const totalMB = (selectedFiles.reduce((s, f) => s + f.size, 0) / 1024 / 1024).toFixed(1);
+    const names = selectedFiles.map(f => {
+      const ext = f.name.substring(f.name.lastIndexOf(".")).toLowerCase();
+      const sizeMB = (f.size / 1024 / 1024).toFixed(1);
+      return `<li class="multi-file-item">${f.name} <span class="multi-file-meta">${ext.slice(1).toUpperCase()} · ${sizeMB} MB</span></li>`;
+    }).join("");
+
+    filePreview.innerHTML = `
+      <div class="multi-file-header">
+        <span class="multi-file-count">${selectedFiles.length} files selected &mdash; ${totalMB} MB total</span>
+        <button type="button" class="file-preview__clear" id="clearFileBtn" aria-label="Remove selected files">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <ul class="multi-file-list">${names}</ul>
+    `;
+    document.getElementById("clearFileBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearSelectedFiles();
+    });
+  }
 }
 
 /*
-  renderDurationRow — shows the duration slider when a file is selected.
+  renderDurationRow — shows the duration slider for single-file uploads only.
   Videos default to the max (60s from config), images default to imageDurationSeconds.
-  This is called every time the selected file changes so the slider always starts
-  at the right value for the file type being uploaded.
+  For multi-file uploads the slider is hidden and each file gets its type default.
 */
 function renderDurationRow() {
-  if (!selectedFile) {
+  if (selectedFiles.length !== 1) {
     durationRow.hidden = true;
     return;
   }
   durationRow.hidden = false;
-  const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
+  const file = selectedFiles[0];
+  const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
   const isVideo = ext === ".mp4" || ext === ".mov";
-  const defaultVal = isVideo ? 60 : defaultImageDuration;
+  const defaultVal = isVideo ? maxVideoDuration : defaultImageDuration;
   videoDurationSlider.value = defaultVal;
   videoDurationValue.textContent = defaultVal;
 }
@@ -138,7 +162,7 @@ dropZone.addEventListener("keydown", (e) => {
 });
 
 mediaFileInput.addEventListener("change", () => {
-  if (mediaFileInput.files[0]) setSelectedFile(mediaFileInput.files[0]);
+  if (mediaFileInput.files.length > 0) setSelectedFiles(mediaFileInput.files);
 });
 
 dropZone.addEventListener("dragover", (e) => {
@@ -153,8 +177,7 @@ dropZone.addEventListener("dragleave", (e) => {
 dropZone.addEventListener("drop", (e) => {
   e.preventDefault();
   dropZone.classList.remove("drag-over");
-  const file = e.dataTransfer.files[0];
-  if (file) setSelectedFile(file);
+  if (e.dataTransfer.files.length > 0) setSelectedFiles(e.dataTransfer.files);
 });
 
 videoDurationSlider.addEventListener("input", () => {
@@ -244,7 +267,6 @@ function openDurationEditor(badge, file, maxDuration) {
         showMessage(result.error || "Could not save duration.", "error");
         return;
       }
-      // Update in-place so the badge shows the new value without a full list reload
       file.duration = result.duration;
       badge.querySelector(".duration-badge__value").textContent = result.duration;
       showMessage(`Duration updated to ${result.duration}s.`, "success");
@@ -316,15 +338,13 @@ async function persistOrder() {
 /*
   buildFileItem — creates a single <li> row for the media library.
   Each row contains: drag handle, order number, thumbnail, file info,
-  "Live" badge (hidden unless active), duration badge, and delete button.
-  The thumbnail falls back to a file-type icon if the image fails to load,
-  which handles videos that haven't had their thumbnail generated yet.
-  data-filename is stored on the <li> so updateNowShowing() can match it
-  against the currently playing filename without re-fetching the file list.
+  "Live" badge (hidden unless active), visibility toggle, duration badge,
+  and delete button. Disabled files are shown greyed out.
 */
 function buildFileItem(file, index, maxDuration) {
   const li = document.createElement("li");
   li.className = "file-item";
+  if (file.enabled === false) li.classList.add("file-item--disabled");
   li.dataset.filename = file.name;
 
   const ext = file.type;
@@ -363,6 +383,35 @@ function buildFileItem(file, index, maxDuration) {
       }));
     };
   }
+
+  // Visibility toggle button
+  const toggleBtn = document.createElement("button");
+  const isEnabled = file.enabled !== false;
+  toggleBtn.className = `file-toggle ${isEnabled ? "file-toggle--on" : "file-toggle--off"}`;
+  toggleBtn.title = isEnabled ? "Visible — click to hide" : "Hidden — click to show";
+  toggleBtn.innerHTML = isEnabled
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+    : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+  toggleBtn.addEventListener("click", async () => {
+    const newEnabled = file.enabled === false;
+    const res = await apiFetch(`/api/media/${encodeURIComponent(file.name)}/enabled`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: newEnabled }),
+    });
+    if (!res) return;
+    if (res.ok) {
+      file.enabled = newEnabled;
+      li.classList.toggle("file-item--disabled", !newEnabled);
+      toggleBtn.className = `file-toggle ${newEnabled ? "file-toggle--on" : "file-toggle--off"}`;
+      toggleBtn.title = newEnabled ? "Visible — click to hide" : "Hidden — click to show";
+      toggleBtn.innerHTML = newEnabled
+        ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+        : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+    }
+  });
+  li.appendChild(toggleBtn);
 
   const badgeDefault = isVideo ? (file.duration ?? maxDuration) : (file.duration ?? defaultImageDuration);
   const badge = document.createElement("span");
@@ -542,60 +591,91 @@ function showMessage(text, type = "info") {
 }
 
 /*
-  Upload handler — validates the file on the client before sending to the server.
+  uploadSingleFile — uploads one file and returns true on success.
+  Used by the upload handler to process files one at a time so the server
+  is not overwhelmed and progress can be reported per-file.
+*/
+async function uploadSingleFile(file, duration) {
+  const formData = new FormData();
+  formData.append("media", file);
+  formData.append("duration", duration);
+
+  const response = await apiFetch("/api/media", { method: "POST", body: formData });
+  if (!response) return false;
+  let result;
+  try { result = await response.json(); } catch {
+    showMessage("Upload failed. Unexpected server response.", "error");
+    return false;
+  }
+  if (!response.ok) {
+    showMessage(`${file.name}: ${result.error || "Upload failed."}`, "error");
+    return false;
+  }
+  return true;
+}
+
+/*
+  Upload handler — validates files on the client before sending to the server.
   Client-side checks (extension, size) give instant feedback without a network
   round-trip. The server still validates independently, so these are a UX layer
-  only, not a security boundary. Duration is always sent for both images and
-  videos so the slideshow knows how long to show each file.
+  only, not a security boundary.
+  For multiple files, uploads proceed sequentially and a summary is shown at the end.
 */
 uploadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  if (!selectedFile) {
+  if (selectedFiles.length === 0) {
     showMessage("Please select or drop a file first.", "error");
     return;
   }
 
   const allowedExtensions = [".jpg", ".jpeg", ".png", ".mp4", ".mov"];
-  const fileExt = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
-
-  if (!allowedExtensions.includes(fileExt)) {
-    showMessage("Only JPG, PNG, MP4, and MOV files are allowed.", "error");
-    return;
-  }
-
-  if (selectedFile.size > 100 * 1024 * 1024) {
-    showMessage("File is too large. Maximum size is 100 MB.", "error");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("media", selectedFile);
-  formData.append("duration", videoDurationSlider.value);
-
-  const isVideo = fileExt === ".mp4" || fileExt === ".mov";
-  showMessage(isVideo ? "Uploading and processing video, please wait…" : "Uploading image…", "info");
-  document.getElementById("uploadBtn").disabled = true;
-
-  try {
-    const response = await apiFetch("/api/media", { method: "POST", body: formData });
-    if (!response) return;
-    let result;
-    try { result = await response.json(); } catch {
-      showMessage("Upload failed. Unexpected server response.", "error");
+  for (const file of selectedFiles) {
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      showMessage(`${file.name}: only JPG, PNG, MP4, and MOV files are allowed.`, "error");
       return;
     }
-    if (!response.ok) { showMessage(result.error || "Upload failed.", "error"); return; }
-    showMessage(`Uploaded: ${result.file}`, "success");
-    clearSelectedFile();
-    videoDurationSlider.value = 60;
-    videoDurationValue.textContent = "60";
-    await loadFiles();
-  } catch {
-    showMessage("Upload failed. Please check your connection.", "error");
-  } finally {
-    document.getElementById("uploadBtn").disabled = false;
+    if (file.size > 100 * 1024 * 1024) {
+      showMessage(`${file.name}: file is too large (max 100 MB).`, "error");
+      return;
+    }
   }
+
+  const uploadBtn = document.getElementById("uploadBtn");
+  uploadBtn.disabled = true;
+
+  const duration = selectedFiles.length === 1 ? videoDurationSlider.value : maxVideoDuration;
+  let succeeded = 0;
+  let failed = 0;
+
+  for (let i = 0; i < selectedFiles.length; i++) {
+    const file = selectedFiles[i];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    const isVideo = ext === ".mp4" || ext === ".mov";
+    const label = selectedFiles.length > 1 ? `(${i + 1}/${selectedFiles.length}) ` : "";
+    showMessage(`${label}${isVideo ? "Processing" : "Uploading"} ${file.name}…`, "info");
+
+    const ok = await uploadSingleFile(file, duration);
+    if (ok === false && !document.body.contains(uploadBtn)) return; // redirected to login
+    if (ok) { succeeded++; } else { failed++; }
+  }
+
+  if (selectedFiles.length === 1) {
+    if (succeeded) showMessage(`Uploaded: ${selectedFiles[0].name}`, "success");
+  } else {
+    if (failed === 0) {
+      showMessage(`All ${succeeded} files uploaded successfully.`, "success");
+    } else if (succeeded === 0) {
+      showMessage(`All ${failed} files failed to upload.`, "error");
+    } else {
+      showMessage(`${succeeded} uploaded, ${failed} failed.`, "error");
+    }
+  }
+
+  clearSelectedFiles();
+  uploadBtn.disabled = false;
+  await loadFiles();
 });
 
 /*
@@ -618,7 +698,92 @@ async function updateNowShowing() {
   } catch {}
 }
 
+// ── Emergency alert ───────────────────────────────────────────────────────
+
+async function loadAlert() {
+  try {
+    const res = await fetch("/api/alert");
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById("alertActiveBadge");
+    const status = document.getElementById("alertStatus");
+    const statusText = document.getElementById("alertCurrentText");
+    const clearBtn = document.getElementById("clearAlertBtn");
+    if (data.message) {
+      badge.hidden = false;
+      status.hidden = false;
+      statusText.textContent = `"${data.message}"`;
+      clearBtn.hidden = false;
+    } else {
+      badge.hidden = true;
+      status.hidden = true;
+      clearBtn.hidden = true;
+    }
+  } catch {}
+}
+
+document.getElementById("activateAlertBtn").addEventListener("click", async () => {
+  const message = document.getElementById("alertInput").value.trim();
+  if (!message) return;
+  const res = await apiFetch("/api/alert", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  if (!res) return;
+  if (res.ok) {
+    document.getElementById("alertInput").value = "";
+    await loadAlert();
+  }
+});
+
+document.getElementById("clearAlertBtn").addEventListener("click", async () => {
+  const res = await apiFetch("/api/alert", { method: "DELETE" });
+  if (!res) return;
+  if (res.ok) await loadAlert();
+});
+
+// ── QR code ───────────────────────────────────────────────────────────────
+
+async function loadQrConfig() {
+  try {
+    const res = await fetch("/api/config");
+    if (!res.ok) return;
+    const config = await res.json();
+    const input = document.getElementById("qrUrlInput");
+    if (input && config.qrUrl) input.value = config.qrUrl;
+  } catch {}
+}
+
+document.getElementById("saveQrBtn").addEventListener("click", async () => {
+  const url = document.getElementById("qrUrlInput").value.trim();
+  const msg = document.getElementById("qrMessage");
+  const res = await apiFetch("/api/config", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ qrUrl: url }),
+  });
+  if (!res) return;
+  if (res.ok) {
+    msg.textContent = url ? "QR code saved." : "QR code cleared.";
+    msg.className = "upload-msg upload-msg--success";
+  } else {
+    msg.textContent = "Could not save.";
+    msg.className = "upload-msg upload-msg--error";
+  }
+});
+
+document.getElementById("clearQrBtn").addEventListener("click", () => {
+  document.getElementById("qrUrlInput").value = "";
+  document.getElementById("saveQrBtn").click();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
 loadFiles();
 updateNowShowing();
+loadAlert();
+loadQrConfig();
+
 setInterval(loadFiles, refreshInterval);
 setInterval(updateNowShowing, 2000);

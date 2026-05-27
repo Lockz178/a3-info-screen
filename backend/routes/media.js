@@ -21,7 +21,7 @@ try {
 } catch {}
 
 const upload = require("../middleware/upload");
-const { uploadsDir, thumbnailsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig } = require("../utils/fileHelpers");
+const { uploadsDir, thumbnailsDir, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig, loadDisabled, saveDisabled } = require("../utils/fileHelpers");
 
 const VIDEO_EXTS = new Set([".mp4", ".mov"]);
 
@@ -141,6 +141,7 @@ router.get("/", (req, res) => {
   try {
     const durations = loadDurations();
     const order = loadOrder();
+    const disabled = loadDisabled();
     const allFiles = fs.readdirSync(uploadsDir).sort();
     const ordered = [
       ...order.filter(f => allFiles.includes(f)),
@@ -148,7 +149,7 @@ router.get("/", (req, res) => {
     ];
     const files = ordered.map((file) => {
       const ext = path.extname(file).toLowerCase();
-      const item = { name: file, url: `/uploads/${file}`, type: ext };
+      const item = { name: file, url: `/uploads/${file}`, type: ext, enabled: !disabled.includes(file) };
       if (VIDEO_EXTS.has(ext)) {
         const thumbPath = path.join(thumbnailsDir, file + ".jpg");
         if (fs.existsSync(thumbPath)) {
@@ -336,6 +337,32 @@ router.patch("/:filename/duration", express.json(), (req, res) => {
 });
 
 /*
+  PATCH /api/media/:filename/enabled — shows or hides a file in the slideshow
+  without deleting it. Disabled filenames are stored in disabled.json.
+  The slideshow filters them out; the dashboard shows them greyed out.
+*/
+router.patch("/:filename/enabled", express.json(), (req, res) => {
+  const safeFilename = path.basename(req.params.filename);
+  if (!fs.existsSync(path.join(uploadsDir, safeFilename))) {
+    return res.status(404).json({ error: "File not found." });
+  }
+  const enabled = !!req.body.enabled;
+  const disabled = loadDisabled();
+  if (enabled) {
+    const idx = disabled.indexOf(safeFilename);
+    if (idx !== -1) disabled.splice(idx, 1);
+  } else {
+    if (!disabled.includes(safeFilename)) disabled.push(safeFilename);
+  }
+  try {
+    saveDisabled(disabled);
+    res.json({ enabled });
+  } catch {
+    res.status(500).json({ error: "Could not save state." });
+  }
+});
+
+/*
   DELETE /api/media/:filename — removes a file and all its associated data.
   Cleans up durations.json, order.json, and the thumbnail so no orphaned data
   accumulates over time. The thumbnail delete is wrapped in try/catch because
@@ -367,6 +394,10 @@ router.delete("/:filename", (req, res) => {
 
     const thumbPath = path.join(thumbnailsDir, safeFilename + ".jpg");
     try { fs.unlinkSync(thumbPath); } catch {}
+
+    const disabled = loadDisabled();
+    const didx = disabled.indexOf(safeFilename);
+    if (didx !== -1) { disabled.splice(didx, 1); saveDisabled(disabled); }
 
     res.status(200).json({ message: "File deleted successfully", file: safeFilename });
   } catch (e) {

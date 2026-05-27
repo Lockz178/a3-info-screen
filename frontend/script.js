@@ -54,6 +54,18 @@ async function loadConfig() {
     if (config.imageDurationSeconds) {
       imageDuration = config.imageDurationSeconds * 1000;
     }
+
+    // Show or hide the QR code based on whether a URL is configured
+    const qrImg = document.getElementById("qrCode");
+    if (config.qrUrl) {
+      if (qrImg.dataset.url !== config.qrUrl) {
+        qrImg.dataset.url = config.qrUrl;
+        qrImg.src = "/api/qr?" + Date.now();
+      }
+      qrImg.hidden = false;
+    } else {
+      qrImg.hidden = true;
+    }
   } catch (error) {
     imageDuration = 10000;
   }
@@ -88,7 +100,7 @@ async function loadMediaFiles(firstLoad = false) {
       }
       return;
     }
-    const newMediaFiles = await response.json();
+    const newMediaFiles = (await response.json()).filter(f => f.enabled !== false);
 
     const wasEmpty = mediaFiles.length === 0;
     const currentFile = mediaFiles[currentIndex] ?? null;
@@ -272,12 +284,36 @@ async function startSlideshow() {
   await loadMediaFiles(true);
 }
 
+/*
+  checkAlert — polls the server for an active emergency alert.
+  When a message is set, it overlays the entire screen so it is impossible
+  to miss. Clears automatically when the dashboard user removes the message.
+*/
+async function checkAlert() {
+  try {
+    const res = await fetch("/api/alert");
+    if (!res.ok) return;
+    const data = await res.json();
+    const overlay = document.getElementById("alertOverlay");
+    const alertText = document.getElementById("alertText");
+    if (data.message) {
+      alertText.textContent = data.message;
+      overlay.hidden = false;
+    } else {
+      overlay.hidden = true;
+    }
+  } catch {}
+}
+
 updateClock();
 setInterval(updateClock, 1000);
 
 startSlideshow();
+checkAlert();
 
 setInterval(() => {
   loadConfig();
   loadMediaFiles(false);
 }, refreshInterval);
+
+setInterval(checkAlert, 5000);

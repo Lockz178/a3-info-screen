@@ -45,12 +45,12 @@
       <div class="dash-card__header">
         <div>
           <h2 class="dash-card__title">Upload Media</h2>
-          <p class="dash-card__desc">JPG, PNG, MP4 or MOV &mdash; max 100&nbsp;MB</p>
+          <p class="dash-card__desc">JPG, PNG, MP4 or MOV &mdash; max 100&nbsp;MB &mdash; select multiple files at once</p>
         </div>
       </div>
 
       <form id="uploadForm" novalidate>
-        <input type="file" id="mediaFile" name="media" accept=".jpg,.jpeg,.png,.mp4,.mov" aria-hidden="true" tabindex="-1" />
+        <input type="file" id="mediaFile" name="media" accept=".jpg,.jpeg,.png,.mp4,.mov" aria-hidden="true" tabindex="-1" multiple />
 
         <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="File upload area. Click or drag files here.">
           <div id="dropIdle">
@@ -96,6 +96,29 @@
     <section class="dash-card">
       <div class="dash-card__header">
         <div>
+          <h2 class="dash-card__title">Emergency Alert</h2>
+          <p class="dash-card__desc">Immediately displays a full-screen message on the corridor screen</p>
+        </div>
+        <span id="alertActiveBadge" class="now-showing-badge" hidden>
+          <span class="now-showing-badge__dot"></span>
+          Active
+        </span>
+      </div>
+      <div id="alertStatus" class="alert-current" hidden>
+        <span id="alertCurrentText"></span>
+      </div>
+      <div class="alert-form">
+        <input type="text" id="alertInput" class="login-input" placeholder="Type a message, e.g. &ldquo;Room closed today&rdquo;" maxlength="200" />
+        <div class="alert-actions">
+          <button id="activateAlertBtn" class="dash-action-btn dash-action-btn--primary">Activate</button>
+          <button id="clearAlertBtn" class="dash-action-btn dash-action-btn--danger" hidden>Clear alert</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-card">
+      <div class="dash-card__header">
+        <div>
           <h2 class="dash-card__title">Media Library</h2>
           <p class="dash-card__desc">Files currently shown on the corridor screen</p>
         </div>
@@ -110,6 +133,24 @@
           <span>No files uploaded yet</span>
         </li>
       </ul>
+    </section>
+
+    <section class="dash-card">
+      <div class="dash-card__header">
+        <div>
+          <h2 class="dash-card__title">QR Code</h2>
+          <p class="dash-card__desc">Shows a scannable QR code in the corner of the corridor screen</p>
+        </div>
+      </div>
+      <div class="qr-form">
+        <label class="login-label" for="qrUrlInput">URL</label>
+        <input type="url" id="qrUrlInput" class="login-input" placeholder="https://example.com" />
+        <div class="alert-actions">
+          <button id="saveQrBtn" class="dash-action-btn dash-action-btn--primary">Save</button>
+          <button id="clearQrBtn" class="dash-action-btn">Clear</button>
+        </div>
+        <div id="qrMessage" class="upload-msg" role="status" aria-live="polite"></div>
+      </div>
     </section>
 
   </main>

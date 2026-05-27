@@ -4,6 +4,7 @@ const express = require("express");
 const path = require("path");
 const mediaRoutes = require("./backend/routes/media");
 const configRoutes = require("./backend/routes/config");
+const alertRoutes = require("./backend/routes/alert");
 const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
 const { loadConfig } = require("./backend/utils/fileHelpers");
 
@@ -61,6 +62,29 @@ app.get("/api/auth/status", (req, res) => {
 });
 
 /*
+  GET /api/qr — generates a QR code PNG for the configured qrUrl.
+  Returns 404 when no URL is set so the slideshow img element can hide itself.
+  Purple on white matches the TAMK brand color used throughout the UI.
+*/
+app.get("/api/qr", async (req, res) => {
+  const config = loadConfig();
+  if (!config.qrUrl) return res.status(404).end();
+  try {
+    const QRCode = require("qrcode");
+    const png = await QRCode.toBuffer(config.qrUrl, {
+      width: 200,
+      margin: 1,
+      color: { dark: "#4e008e", light: "#ffffff" },
+    });
+    res.set("Content-Type", "image/png");
+    res.set("Cache-Control", "no-cache");
+    res.send(png);
+  } catch {
+    res.status(500).end();
+  }
+});
+
+/*
   Protect the dashboard page. This route intercepts /dashboard.html before
   the static middleware so unauthenticated requests are redirected to login
   instead of receiving the raw HTML file.
@@ -95,9 +119,27 @@ app.use("/api/media", (req, res, next) => {
   if (writeMethods.includes(req.method)) return requireAuth(req, res, next);
   next();
 });
-
 app.use("/api/media", mediaRoutes);
+
+/*
+  PATCH /api/config requires auth (saves QR URL and other settings).
+  GET /api/config stays public — the slideshow reads it for image durations.
+*/
+app.use("/api/config", (req, res, next) => {
+  if (req.method === "PATCH") return requireAuth(req, res, next);
+  next();
+});
 app.use("/api/config", configRoutes);
+
+/*
+  GET /api/alert is public — the slideshow polls it to show/hide the overlay.
+  POST and DELETE require auth so only dashboard users can set/clear alerts.
+*/
+app.use("/api/alert", (req, res, next) => {
+  if (["POST", "DELETE"].includes(req.method)) return requireAuth(req, res, next);
+  next();
+});
+app.use("/api/alert", alertRoutes);
 
 /*
   Global error handler. Express passes errors here when middleware calls

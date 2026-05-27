@@ -6,6 +6,7 @@ const thumbnailsDir = path.join(__dirname, "../../thumbnails");
 const configPath = path.join(__dirname, "../../config.json");
 const durationsPath = path.join(__dirname, "../../durations.json");
 const orderPath = path.join(__dirname, "../../order.json");
+const disabledPath = path.join(__dirname, "../../disabled.json");
 
 /*
   Create the uploads and thumbnails directories when this module is first
@@ -62,7 +63,7 @@ function saveOrder(order) {
   are also used if the file doesn't exist yet (fresh install).
 */
 function loadConfig() {
-  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60 };
+  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60, qrUrl: "" };
   if (!fs.existsSync(configPath)) return defaults;
   try {
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
@@ -72,4 +73,18 @@ function loadConfig() {
   }
 }
 
-module.exports = { uploadsDir, thumbnailsDir, configPath, durationsPath, orderPath, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig };
+function saveConfig(config) {
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+}
+
+function loadDisabled() {
+  if (!fs.existsSync(disabledPath)) return [];
+  try { return JSON.parse(fs.readFileSync(disabledPath, "utf-8")); }
+  catch { return []; }
+}
+
+function saveDisabled(disabled) {
+  fs.writeFileSync(disabledPath, JSON.stringify(disabled, null, 2));
+}
+
+module.exports = { uploadsDir, thumbnailsDir, configPath, durationsPath, orderPath, loadDurations, saveDurations, loadOrder, saveOrder, loadConfig, saveConfig, loadDisabled, saveDisabled };
