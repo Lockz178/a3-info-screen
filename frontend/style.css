@@ -1238,3 +1238,98 @@ input[type="range"] {
     margin-left: auto;
   }
 }
+
+/* ── Login page ──────────────────────────────────────────────────────────── */
+
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid #e8e0f0;
+  border-radius: 16px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 4px 24px rgba(78, 0, 142, 0.08);
+}
+
+.login-brand {
+  justify-content: flex-start;
+  margin-bottom: 28px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4e008e;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.login-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #d0bfe8;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #4e008e;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.login-input:focus {
+  border-color: #4e008e;
+}
+
+.login-error {
+  font-size: 0.85rem;
+  color: #c0392b;
+  background: #fdf0ef;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.login-btn {
+  margin-top: 4px;
+  width: 100%;
+}
+
+/* ── Logout button ───────────────────────────────────────────────────────── */
+
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1.5px solid #d0bfe8;
+  border-radius: 8px;
+  color: #4e008e;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.dash-logout-btn:hover {
+  background: #f3eaff;
+  border-color: #4e008e;
+}

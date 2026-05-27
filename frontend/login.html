@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A3 Info Screen &mdash; Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dash-body">
+
+  <main class="login-wrap">
+    <div class="login-card">
+
+      <div class="dash-brand login-brand">
+        <svg class="dash-brand__icon" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <div>
+          <span class="dash-brand__title">A3 Info Screen</span>
+          <span class="dash-brand__sub">Corridor Display Dashboard</span>
+        </div>
+      </div>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <label class="login-label" for="passwordInput">Password</label>
+        <input
+          class="login-input"
+          type="password"
+          id="passwordInput"
+          name="password"
+          autocomplete="current-password"
+          placeholder="Enter dashboard password"
+          required
+        />
+        <div id="loginError" class="login-error" hidden></div>
+        <button type="submit" class="button button--upload login-btn">
+          <div class="wave"></div>
+          <div class="wave"></div>
+          <div class="wave"></div>
+          <div class="wave"></div>
+          <div class="fish"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <div class="bubble"></div>
+          <span class="button__text">Sign in</span>
+        </button>
+      </form>
+
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const errorEl = document.getElementById("loginError");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+      const password = document.getElementById("passwordInput").value;
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        if (res.ok) {
+          window.location.href = "/dashboard.html";
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errorEl.textContent = data.error || "Incorrect password.";
+          errorEl.hidden = false;
+        }
+      } catch {
+        errorEl.textContent = "Could not reach the server. Please try again.";
+        errorEl.hidden = false;
+      }
+    });
+  </script>
+
+</body>
+</html>

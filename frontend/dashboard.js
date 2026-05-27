@@ -1,3 +1,28 @@
+/*
+  apiFetch — wraps fetch for write API calls. If the server returns 401
+  (session expired while the page was open), redirects to login so the user
+  is not left staring at a silent failure.
+*/
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    window.location.href = "/login.html";
+    return null;
+  }
+  return res;
+}
+
+// Show the logout button only when a password is configured
+fetch("/api/auth/status").then(r => r.json()).then(data => {
+  const btn = document.getElementById("logoutBtn");
+  if (data.authenticated && btn) btn.hidden = false;
+}).catch(() => {});
+
+document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  window.location.href = "/login.html";
+});
+
 const uploadForm      = document.getElementById("uploadForm");
 const mediaFileInput  = document.getElementById("mediaFile");
 const uploadMessage   = document.getElementById("uploadMessage");
@@ -207,11 +232,12 @@ function openDurationEditor(badge, file, maxDuration) {
     const newDuration = parseInt(slider.value);
     closeDurationPopover();
     try {
-      const res = await fetch(`/api/media/${encodeURIComponent(file.name)}/duration`, {
+      const res = await apiFetch(`/api/media/${encodeURIComponent(file.name)}/duration`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ duration: newDuration }),
       });
+      if (!res) return;
       let result;
       try { result = await res.json(); } catch { result = {}; }
       if (!res.ok) {
@@ -276,12 +302,12 @@ function updateOrderNumbers() {
 async function persistOrder() {
   const order = [...fileList.querySelectorAll(".file-item")].map(li => li.dataset.filename);
   try {
-    const res = await fetch("/api/media/order", {
+    const res = await apiFetch("/api/media/order", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order }),
     });
-    if (!res.ok) showMessage("Order could not be saved. It will reset on next refresh.", "error");
+    if (res && !res.ok) showMessage("Order could not be saved. It will reset on next refresh.", "error");
   } catch {
     showMessage("Order could not be saved. Please check your connection.", "error");
   }
@@ -366,7 +392,8 @@ function buildFileItem(file, index, maxDuration) {
   deleteBtn.addEventListener("click", async () => {
     if (!confirm(`Delete ${file.name}?`)) return;
     try {
-      const res = await fetch(`/api/media/${encodeURIComponent(file.name)}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/media/${encodeURIComponent(file.name)}`, { method: "DELETE" });
+      if (!res) return;
       let result;
       try { result = await res.json(); } catch { result = {}; }
       if (!res.ok) { showMessage(result.error || "Delete failed.", "error"); return; }
@@ -551,7 +578,8 @@ uploadForm.addEventListener("submit", async (e) => {
   document.getElementById("uploadBtn").disabled = true;
 
   try {
-    const response = await fetch("/api/media", { method: "POST", body: formData });
+    const response = await apiFetch("/api/media", { method: "POST", body: formData });
+    if (!response) return;
     let result;
     try { result = await response.json(); } catch {
       showMessage("Upload failed. Unexpected server response.", "error");

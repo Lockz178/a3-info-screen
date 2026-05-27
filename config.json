@@ -1,4 +1,5 @@
 {
   "imageDurationSeconds": 10,
-  "maxVideoDurationSeconds": 60
+  "maxVideoDurationSeconds": 60,
+  "dashboardPassword": ""
 }

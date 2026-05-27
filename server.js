@@ -1,7 +1,11 @@
+const crypto = require("crypto");
+const session = require("express-session");
 const express = require("express");
 const path = require("path");
 const mediaRoutes = require("./backend/routes/media");
 const configRoutes = require("./backend/routes/config");
+const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
+const { loadConfig } = require("./backend/utils/fileHelpers");
 
 const app = express();
 const PORT = 3000;
@@ -13,6 +17,57 @@ const PORT = 3000;
   On a local dev machine it has no security impact since there is no public IP.
 */
 const HOST = "0.0.0.0";
+
+/*
+  Session secret is random per startup. Sessions are invalidated when the
+  server restarts, which is acceptable — teachers just log in again after a
+  reboot. Using a fixed secret would persist sessions across restarts but
+  would need to be stored and rotated, adding unnecessary complexity.
+*/
+app.use(session({
+  secret: crypto.randomBytes(32).toString("hex"),
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: "lax" },
+}));
+
+app.use(express.json());
+
+/*
+  Auth routes — login and logout.
+  POST /api/auth/login: compares submitted password against dashboardPassword
+  in config.json. Empty dashboardPassword means no protection is active.
+  POST /api/auth/logout: destroys the session.
+  GET  /api/auth/status: lets the login page know if auth is needed.
+*/
+app.post("/api/auth/login", (req, res) => {
+  const { password } = req.body;
+  const config = loadConfig();
+  if (!config.dashboardPassword || password === config.dashboardPassword) {
+    req.session.authenticated = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ error: "Incorrect password." });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get("/api/auth/status", (req, res) => {
+  const config = loadConfig();
+  const needsPassword = !!config.dashboardPassword;
+  res.json({ authenticated: !needsPassword || !!(req.session && req.session.authenticated) });
+});
+
+/*
+  Protect the dashboard page. This route intercepts /dashboard.html before
+  the static middleware so unauthenticated requests are redirected to login
+  instead of receiving the raw HTML file.
+*/
+app.get("/dashboard.html", requireAuthPage, (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "dashboard.html"));
+});
 
 /*
   Static file serving. The frontend folder contains the HTML/CSS/JS for both
@@ -27,6 +82,18 @@ app.use("/thumbnails", express.static(path.join(__dirname, "thumbnails")));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "A3 Info Screen server is running" });
+});
+
+/*
+  Protect write operations on /api/media. GET requests (used by the slideshow)
+  and /current (used by the slideshow to report what's playing) stay public.
+  POST, DELETE, PATCH, and PUT require an authenticated session.
+*/
+app.use("/api/media", (req, res, next) => {
+  if (req.path === "/current") return next();
+  const writeMethods = ["POST", "DELETE", "PATCH", "PUT"];
+  if (writeMethods.includes(req.method)) return requireAuth(req, res, next);
+  next();
 });
 
 app.use("/api/media", mediaRoutes);
