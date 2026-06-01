@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const fs = require("fs");
 const session = require("express-session");
 const express = require("express");
 const path = require("path");
@@ -6,7 +7,7 @@ const mediaRoutes = require("./backend/routes/media");
 const configRoutes = require("./backend/routes/config");
 const alertRoutes = require("./backend/routes/alert");
 const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
-const { loadConfig } = require("./backend/utils/fileHelpers");
+const { loadConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
 
 const app = express();
 const PORT = 3000;
@@ -153,6 +154,63 @@ app.use((err, req, res, next) => {
   }
   res.status(400).json({ error: err.message || "Something went wrong." });
 });
+
+/*
+  syncFromVM — keeps the Pi's uploads folder in sync with the VM.
+  On startup and every 5 minutes it fetches the VM's media list, downloads
+  any files that exist on the VM but not locally, and deletes any local files
+  that were removed from the VM. Order, durations, and disabled state are also
+  synced from the VM response. If the VM is unreachable the function exits
+  silently so the Pi keeps showing its last known local slides.
+
+  Only runs when VM_SYNC_URL is set (e.g. in the Pi's systemd service file).
+  The VM itself does not set this variable so it never tries to sync from itself.
+*/
+async function syncFromVM() {
+  const vmUrl = process.env.VM_SYNC_URL;
+  if (!vmUrl) return;
+
+  try {
+    const base = vmUrl.replace(/\/$/, "");
+    const res = await fetch(`${base}/api/media`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return;
+
+    const vmFiles = await res.json();
+    const localFiles = new Set(fs.readdirSync(uploadsDir));
+    const vmFileNames = new Set(vmFiles.map(f => f.name));
+
+    for (const file of vmFiles) {
+      if (!localFiles.has(file.name)) {
+        try {
+          const fileRes = await fetch(`${base}${file.url}`, { signal: AbortSignal.timeout(60000) });
+          if (!fileRes.ok) continue;
+          fs.writeFileSync(path.join(uploadsDir, file.name), Buffer.from(await fileRes.arrayBuffer()));
+        } catch {}
+      }
+    }
+
+    for (const localFile of localFiles) {
+      if (!vmFileNames.has(localFile)) {
+        try { fs.unlinkSync(path.join(uploadsDir, localFile)); } catch {}
+      }
+    }
+
+    saveOrder(vmFiles.map(f => f.name));
+
+    const durations = {};
+    for (const file of vmFiles) {
+      if (file.duration != null) durations[file.name] = file.duration;
+    }
+    saveDurations(durations);
+    saveDisabled(vmFiles.filter(f => !f.enabled).map(f => f.name));
+
+  } catch {
+    // VM unreachable — Pi keeps showing its local slides
+  }
+}
+
+syncFromVM();
+setInterval(syncFromVM, 5 * 60 * 1000);
 
 app.listen(PORT, HOST, () => {
   console.log(`A3 Info Screen server running at http://${HOST}:${PORT}`);
