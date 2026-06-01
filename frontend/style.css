@@ -700,6 +700,12 @@ input[type="range"] {
   color: #475569;
 }
 
+.duration-popover__warning {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 6px;
+}
+
 .duration-popover__ticks {
   display: flex;
   justify-content: space-between;

@@ -207,6 +207,8 @@ function closeDurationPopover() {
 function openDurationEditor(badge, file, maxDuration) {
   closeDurationPopover();
 
+  const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+  const isVideo = ext === ".mp4" || ext === ".mov";
   const current = file.duration ?? maxDuration;
 
   const popover = document.createElement("div");
@@ -223,6 +225,7 @@ function openDurationEditor(badge, file, maxDuration) {
       <span class="duration-popover__unit">seconds</span>
     </div>
     <input type="range" min="5" max="${maxDuration}" value="${current}">
+    <div class="duration-popover__warning" hidden></div>
     <div class="duration-popover__ticks"><span>5s</span><span>${maxDuration}s</span></div>
     <div class="duration-popover__actions">
       <button class="duration-popover__btn duration-popover__btn--cancel">Cancel</button>
@@ -244,9 +247,32 @@ function openDurationEditor(badge, file, maxDuration) {
 
   const slider = popover.querySelector("input[type=range]");
   const valueDisplay = popover.querySelector(".duration-popover__value");
+  const warning = popover.querySelector(".duration-popover__warning");
+
+  let actualVideoDuration = null;
+
+  if (isVideo) {
+    const tempVideo = document.createElement("video");
+    tempVideo.preload = "metadata";
+    tempVideo.src = file.url;
+    tempVideo.addEventListener("loadedmetadata", () => {
+      actualVideoDuration = Math.floor(tempVideo.duration);
+      checkWarning(parseInt(slider.value));
+    });
+  }
+
+  function checkWarning(val) {
+    if (actualVideoDuration !== null && val > actualVideoDuration) {
+      warning.textContent = `Video is only ${actualVideoDuration}s long — extra time will be ignored.`;
+      warning.hidden = false;
+    } else {
+      warning.hidden = true;
+    }
+  }
 
   slider.addEventListener("input", () => {
     valueDisplay.textContent = slider.value;
+    checkWarning(parseInt(slider.value));
   });
 
   popover.querySelector(".duration-popover__btn--cancel").addEventListener("click", closeDurationPopover);

@@ -5,6 +5,7 @@ let currentIndex = 0;
 let imageTimer = null;
 let videoTimer = null;
 let imageDuration = 10000;
+let maxVideoDuration = 60;
 let currentVideoEl = null;
 
 /*
@@ -53,6 +54,9 @@ async function loadConfig() {
 
     if (config.imageDurationSeconds) {
       imageDuration = config.imageDurationSeconds * 1000;
+    }
+    if (config.maxVideoDurationSeconds) {
+      maxVideoDuration = config.maxVideoDurationSeconds;
     }
 
     // Show or hide the QR code based on whether a URL is configured
@@ -240,14 +244,13 @@ function showCurrentMedia() {
       showNextMedia();
     };
 
-    if (file.duration != null) {
-      video.addEventListener("play", () => {
-        videoTimer = setTimeout(() => {
-          video.pause();
-          showNextMedia();
-        }, file.duration * 1000);
-      }, { once: true });
-    }
+    const videoCap = file.duration != null ? file.duration : maxVideoDuration;
+    video.addEventListener("play", () => {
+      videoTimer = setTimeout(() => {
+        video.pause();
+        showNextMedia();
+      }, videoCap * 1000);
+    }, { once: true });
 
     mediaArea.appendChild(video);
   } else {
