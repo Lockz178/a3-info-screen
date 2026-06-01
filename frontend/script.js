@@ -222,8 +222,10 @@ function showCurrentMedia() {
   const isVideo = file.type === ".mp4" || file.type === ".mov";
 
   reportCurrent(file.name);
-  mediaArea.innerHTML = "";
   currentVideoEl = null;
+
+  const oldEl = mediaArea.querySelector(".media-item");
+  let newEl;
 
   if (isVideo) {
     const video = document.createElement("video");
@@ -252,18 +254,36 @@ function showCurrentMedia() {
       }, videoCap * 1000);
     }, { once: true });
 
-    mediaArea.appendChild(video);
+    newEl = video;
   } else {
     const image = document.createElement("img");
     image.src = file.url;
     image.alt = file.name;
     image.className = "media-item";
-
     image.onerror = showNextMedia;
 
-    mediaArea.appendChild(image);
+    // Pick a random Ken Burns pattern and run it for the full slide duration
+    const kbVariants = ["kb-1", "kb-2", "kb-3", "kb-4"];
+    image.classList.add(kbVariants[Math.floor(Math.random() * kbVariants.length)]);
+    const slideSecs = file.duration != null ? file.duration : imageDuration / 1000;
+    image.style.animationDuration = slideSecs + "s";
 
-    imageTimer = setTimeout(showNextMedia, file.duration != null ? file.duration * 1000 : imageDuration);
+    imageTimer = setTimeout(showNextMedia, slideSecs * 1000);
+
+    newEl = image;
+  }
+
+  // Append new element (invisible), force reflow, then fade it in
+  mediaArea.appendChild(newEl);
+  newEl.getBoundingClientRect();
+  newEl.classList.add("active");
+
+  // Fade out old element and remove it after the transition finishes
+  if (oldEl) {
+    oldEl.classList.remove("active");
+    setTimeout(() => {
+      if (oldEl.parentNode === mediaArea) oldEl.remove();
+    }, 1000);
   }
 }
 
