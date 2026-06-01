@@ -31,9 +31,9 @@ body {
 
 .top-left-logo {
   position: absolute;
-  top: 5px;
-  left: 30px;
-  width: 200px;
+  top: 1vh;
+  left: 2vw;
+  width: clamp(150px, 10vw, 320px);
   height: auto;
   z-index: 100;
 }
