@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const { uploadsDir } = require("../utils/fileHelpers");
 
-const allowedTypes = [".jpg", ".jpeg", ".png", ".mp4", ".mov"];
+const allowedTypes = [".jpg", ".jpeg", ".png", ".gif", ".mp4", ".mov"];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -22,7 +22,7 @@ const upload = multer({
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error("Only JPG, PNG, MP4, and MOV files are allowed."));
+      cb(new Error("Only JPG, PNG, GIF, MP4, and MOV files are allowed."));
     }
   },
 });
