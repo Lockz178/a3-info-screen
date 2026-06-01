@@ -748,9 +748,7 @@ async function loadAlert() {
   } catch {}
 }
 
-document.getElementById("activateAlertBtn").addEventListener("click", async () => {
-  const message = document.getElementById("alertInput").value.trim();
-  if (!message) return;
+async function activateAlert(message) {
   const res = await apiFetch("/api/alert", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -761,6 +759,16 @@ document.getElementById("activateAlertBtn").addEventListener("click", async () =
     document.getElementById("alertInput").value = "";
     await loadAlert();
   }
+}
+
+document.getElementById("activateAlertBtn").addEventListener("click", async () => {
+  const message = document.getElementById("alertInput").value.trim();
+  if (!message) return;
+  await activateAlert(message);
+});
+
+document.querySelectorAll(".alert-preset-btn").forEach(btn => {
+  btn.addEventListener("click", () => activateAlert(btn.dataset.message));
 });
 
 document.getElementById("clearAlertBtn").addEventListener("click", async () => {

@@ -107,8 +107,25 @@
       <div id="alertStatus" class="alert-current" hidden>
         <span id="alertCurrentText"></span>
       </div>
+      <div class="alert-presets">
+        <p class="alert-presets__label">Quick presets — one tap to activate:</p>
+        <div class="alert-presets__grid">
+          <button class="alert-preset-btn" data-message="FIRE ALARM — Evacuate immediately via the nearest exit">
+            🔥 Fire Alarm
+          </button>
+          <button class="alert-preset-btn" data-message="BUILDING EVACUATION — Please leave the building now">
+            🚨 Evacuation
+          </button>
+          <button class="alert-preset-btn" data-message="EMERGENCY — Please follow staff instructions immediately">
+            ⚠️ Emergency
+          </button>
+          <button class="alert-preset-btn" data-message="FIRE DRILL — This is a drill, please evacuate calmly">
+            🧯 Fire Drill
+          </button>
+        </div>
+      </div>
       <div class="alert-form">
-        <input type="text" id="alertInput" class="login-input" placeholder="Type a message, e.g. &ldquo;Room closed today&rdquo;" maxlength="200" />
+        <input type="text" id="alertInput" class="login-input" placeholder="Or type a custom message&hellip;" maxlength="200" />
         <div class="alert-actions">
           <button id="activateAlertBtn" class="dash-action-btn dash-action-btn--primary">Activate</button>
           <button id="clearAlertBtn" class="dash-action-btn dash-action-btn--danger" hidden>Clear alert</button>

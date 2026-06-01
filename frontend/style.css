@@ -1425,6 +1425,44 @@ input[type="range"] {
 
 /* ── Alert card (dashboard) ─────────────────────────────────────────────── */
 
+.alert-presets {
+  margin-bottom: 12px;
+}
+
+.alert-presets__label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.alert-presets__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.alert-preset-btn {
+  padding: 12px 10px;
+  background: #7f1d1d;
+  color: #fff;
+  border: 1.5px solid #991b1b;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.alert-preset-btn:hover {
+  background: #991b1b;
+}
+
+.alert-preset-btn:active {
+  transform: scale(0.97);
+}
+
 .alert-form {
   display: flex;
   flex-direction: column;
