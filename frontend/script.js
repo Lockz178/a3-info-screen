@@ -7,6 +7,7 @@ let videoTimer = null;
 let imageDuration = 10000;
 let maxVideoDuration = 60;
 let currentVideoEl = null;
+let consecutiveSkips = 0;
 
 /*
   Refresh interval for pulling updated media and config from the server.
@@ -94,14 +95,7 @@ async function loadMediaFiles(firstLoad = false) {
   try {
     const response = await fetch("/api/media");
     if (!response.ok) {
-      if (firstLoad) {
-        mediaArea.innerHTML = `
-          <div class="placeholder">
-            <h1>Error loading media</h1>
-            <p>Server returned an error. Please check the server.</p>
-          </div>
-        `;
-      }
+      if (firstLoad) showPlaceholder();
       return;
     }
     const newMediaFiles = (await response.json()).filter(f => f.enabled !== false);
@@ -157,13 +151,9 @@ async function loadMediaFiles(firstLoad = false) {
         }
       }
     }
-  } catch (error) {
-    mediaArea.innerHTML = `
-      <div class="placeholder">
-        <h1>Error loading media</h1>
-        <p>Please check the server.</p>
-      </div>
-    `;
+  } catch {
+    if (firstLoad) showPlaceholder();
+    // Non-first load: silently keep showing current content
   }
 }
 
@@ -240,6 +230,8 @@ function showCurrentMedia() {
     video.className = "media-item";
     currentVideoEl = video;
 
+    video.oncanplay = () => { consecutiveSkips = 0; };
+
     video.onended = () => {
       clearTimeout(videoTimer);
       showNextMedia();
@@ -264,6 +256,7 @@ function showCurrentMedia() {
     image.src = file.url;
     image.alt = file.name;
     image.className = "media-item";
+    image.onload = () => { consecutiveSkips = 0; };
     image.onerror = showNextMedia;
 
     const slideSecs = file.duration != null ? file.duration : imageDuration / 1000;
@@ -278,6 +271,12 @@ function showCurrentMedia() {
 
 function showNextMedia() {
   if (mediaFiles.length === 0) {
+    showPlaceholder();
+    return;
+  }
+  consecutiveSkips++;
+  if (consecutiveSkips >= mediaFiles.length) {
+    consecutiveSkips = 0;
     showPlaceholder();
     return;
   }
