@@ -266,29 +266,14 @@ function showCurrentMedia() {
     image.className = "media-item";
     image.onerror = showNextMedia;
 
-    // Pick a random Ken Burns pattern and run it for the full slide duration
-    const kbVariants = ["kb-1", "kb-2", "kb-3", "kb-4"];
-    image.classList.add(kbVariants[Math.floor(Math.random() * kbVariants.length)]);
     const slideSecs = file.duration != null ? file.duration : imageDuration / 1000;
-    image.style.animationDuration = slideSecs + "s";
-
     imageTimer = setTimeout(showNextMedia, slideSecs * 1000);
 
     newEl = image;
   }
 
-  // Append new element (invisible), force reflow, then fade it in
+  if (oldEl) oldEl.remove();
   mediaArea.appendChild(newEl);
-  newEl.getBoundingClientRect();
-  newEl.classList.add("active");
-
-  // Fade out old element and remove it after the transition finishes
-  if (oldEl) {
-    oldEl.classList.remove("active");
-    setTimeout(() => {
-      if (oldEl.parentNode === mediaArea) oldEl.remove();
-    }, 1000);
-  }
 }
 
 function showNextMedia() {
