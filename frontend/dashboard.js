@@ -196,6 +196,7 @@ videoDurationSlider.addEventListener("input", () => {
   opened the popover from immediately closing it.
 */
 let activeDurationPopover = null;
+let isDragging = false;
 
 function closeDurationPopover() {
   if (activeDurationPopover) {
@@ -494,6 +495,7 @@ function buildFileItem(file, index, maxDuration) {
   const handle = li.querySelector(".drag-handle");
   handle.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    isDragging = true;
     closeDurationPopover();
 
     const rect = li.getBoundingClientRect();
@@ -535,12 +537,14 @@ function buildFileItem(file, index, maxDuration) {
     }
 
     async function onUp() {
+      isDragging = false;
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
       ghost.remove();
       li.classList.remove("drag-placeholder");
       updateOrderNumbers();
       await persistOrder();
+      await loadFiles();
     }
 
     document.addEventListener("pointermove", onMove);
@@ -567,6 +571,7 @@ let defaultImageDuration = 10;
   for the next polling interval to fire.
 */
 async function loadFiles() {
+  if (isDragging) return;
   try {
     const [mediaRes, configRes] = await Promise.all([
       fetch("/api/media"),
@@ -585,7 +590,6 @@ async function loadFiles() {
     }
 
     const files = await mediaRes.json();
-    closeDurationPopover();
     fileList.innerHTML = "";
 
     fileCountBadge.hidden = files.length === 0;

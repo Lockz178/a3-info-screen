@@ -218,6 +218,10 @@ function showCurrentMedia() {
     return;
   }
 
+  // Remove placeholder so it doesn't bleed through during crossfade transitions
+  const placeholder = mediaArea.querySelector(".placeholder");
+  if (placeholder) placeholder.remove();
+
   const file = mediaFiles[currentIndex];
   const isVideo = file.type === ".mp4" || file.type === ".mov";
 
