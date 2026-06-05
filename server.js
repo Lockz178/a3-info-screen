@@ -170,10 +170,11 @@ async function syncFromVM() {
   const vmUrl = process.env.VM_SYNC_URL;
   if (!vmUrl) return;
 
+  console.log(`[sync] syncing from ${vmUrl}`);
   try {
     const base = vmUrl.replace(/\/$/, "");
     const res = await fetch(`${base}/api/media`, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) return;
+    if (!res.ok) { console.log(`[sync] VM returned ${res.status}`); return; }
 
     const vmFiles = await res.json();
     const localFiles = new Set(fs.readdirSync(uploadsDir));
@@ -185,13 +186,14 @@ async function syncFromVM() {
           const fileRes = await fetch(`${base}${file.url}`, { signal: AbortSignal.timeout(60000) });
           if (!fileRes.ok) continue;
           fs.writeFileSync(path.join(uploadsDir, file.name), Buffer.from(await fileRes.arrayBuffer()));
+          console.log(`[sync] downloaded ${file.name}`);
         } catch {}
       }
     }
 
     for (const localFile of localFiles) {
       if (!vmFileNames.has(localFile)) {
-        try { fs.unlinkSync(path.join(uploadsDir, localFile)); } catch {}
+        try { fs.unlinkSync(path.join(uploadsDir, localFile)); console.log(`[sync] deleted ${localFile}`); } catch {}
       }
     }
 
@@ -203,9 +205,10 @@ async function syncFromVM() {
     }
     saveDurations(durations);
     saveDisabled(vmFiles.filter(f => !f.enabled).map(f => f.name));
+    console.log(`[sync] done — ${vmFiles.length} file(s) on VM`);
 
-  } catch {
-    // VM unreachable — Pi keeps showing its local slides
+  } catch (err) {
+    console.log(`[sync] VM unreachable (${err.message}) — keeping local files`);
   }
 }
 
