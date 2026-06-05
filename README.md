@@ -4,9 +4,18 @@ This repository contains the project work for the A3 Info Screen project in Prac
 
 ## Project goal
 
-The goal is to develop a Raspberry Pi-powered information screen system for the A3 corridor TV. The system displays uploaded images and short videos as a fullscreen slideshow.
+A Raspberry Pi-powered information screen system for the A3 corridor TV at TAMK. The system displays uploaded images and short videos as a fullscreen slideshow. Teachers and staff manage content through a web dashboard — no technical knowledge required.
 
-Teachers or staff can manage the media through a simple web dashboard. Uploaded files are saved on the Raspberry Pi, and the slideshow updates automatically.
+## Documentation
+
+- [User Guide](docs/USER_GUIDE.md) — how to upload and manage content (for teachers)
+- [Installation Guide](docs/INSTALLATION_GUIDE.md) — how to set up the system on a new Pi or VM
+
+## System overview
+
+- A **Raspberry Pi** connected to the corridor TV runs the slideshow fullscreen via Chromium kiosk.
+- A **VM** (`a3info.project.tamk.cloud`) hosts the dashboard so teachers can upload from anywhere.
+- The Pi syncs content from the VM automatically every 5 minutes.
 
 ## Team
 
@@ -25,26 +34,27 @@ Teachers or staff can manage the media through a simple web dashboard. Uploaded 
 
 ## Technologies
 
-- Node.js
-- Express
-- Multer
-- HTML
-- CSS
-- JavaScript
-- Raspberry Pi
+- Node.js / Express
+- Multer (file uploads)
+- fluent-ffmpeg / ffprobe (video processing)
+- HTML / CSS / JavaScript
+- Raspberry Pi (kiosk display)
+- nginx + pm2 (VM deployment)
 
-## Current features
+## Features
 
-- Fullscreen slideshow page
-- Upload dashboard page
-- JPG, PNG, and MP4 upload
-- Uploaded media stored locally in the uploads folder
-- Media list API
-- Delete uploaded media from dashboard
-- Configurable image duration using config.json
-- Automatic media refresh
-- Media sorted by upload order
-- Raspberry Pi network access using IP address
+- Fullscreen slideshow — images, GIFs, and videos (JPG, PNG, GIF, MP4, MOV)
+- Web dashboard accessible from any device
+- Upload, delete, and reorder slides
+- Per-slide display duration
+- Enable/disable individual slides or the entire slideshow
+- Emergency alert with one-tap presets (Fire Alarm, Evacuation, Emergency, Fire Drill)
+- Optional dashboard password protection
+- QR code display on the TV
+- Automatic VM→Pi sync every 5 minutes
+- Videos capped at 60 seconds
+- Thumbnail generation
+- Live "Now Showing" indicator on the dashboard
 
 ## How to run locally
 
@@ -52,3 +62,16 @@ Install dependencies:
 
 ```bash
 npm install
+```
+
+Start the server:
+
+```bash
+npm start
+```
+
+Open the slideshow at `http://localhost:3000` and the dashboard at `http://localhost:3000/dashboard.html`.
+
+## Deployment
+
+See [Installation Guide](docs/INSTALLATION_GUIDE.md) for full setup instructions for the Raspberry Pi and VM.
