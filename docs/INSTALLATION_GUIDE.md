@@ -37,7 +37,6 @@ node -v
 ```bash
 cd ~
 git clone https://gitlab.tamk.cloud/tamk-projects/summer-projects/2026/004-a3-info-screen.git
-mv 004-a3-info-screen 004-a3-info-screen
 cd 004-a3-info-screen
 ```
 
@@ -238,6 +237,35 @@ cd ~/004-a3-info-screen
 git pull
 pm2 restart all
 ```
+
+---
+
+## Deploying to a second location
+
+### Same content (mirror)
+
+If the second screen should show the same slides as the first, you only need to set up a new Pi — no new VM needed.
+
+Follow Part 1 exactly as written. In step 5 (systemd service), use the same `VM_SYNC_URL`:
+
+```ini
+Environment=VM_SYNC_URL=http://a3info.project.tamk.cloud
+```
+
+The Pi will sync from the existing VM. Both screens will always show the same content.
+
+### Different content (separate screen)
+
+If the second screen should show different slides, you need a new VM and a new Pi.
+
+1. **Set up a new VM** — follow Part 2. In step 6 (nginx), replace `a3info.project.tamk.cloud` with the new VM's public hostname (e.g. `a3info-hallway.project.tamk.cloud`).
+2. **Set up a new Pi** — follow Part 1. In step 5 (systemd service), point `VM_SYNC_URL` to the new VM's URL:
+
+```ini
+Environment=VM_SYNC_URL=http://a3info-hallway.project.tamk.cloud
+```
+
+Each VM has its own dashboard and its own uploads folder. Teachers manage each screen independently.
 
 ---
 
