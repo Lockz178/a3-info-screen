@@ -1559,3 +1559,10 @@ input[type="range"] {
   color: #aaa;
   font-size: 0.78rem;
 }
+
+.dash-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: #666;
+  font-size: 0.78rem;
+}
