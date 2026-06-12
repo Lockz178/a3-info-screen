@@ -23,4 +23,7 @@ router.delete("/", (req, res) => {
   res.json({ ok: true });
 });
 
+function getAlertMessage() { return alertMessage; }
+
 module.exports = router;
+module.exports.getAlertMessage = getAlertMessage;

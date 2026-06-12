@@ -1,12 +1,17 @@
 const fs = require("fs");
 const path = require("path");
 const { uploadsDir } = require("../utils/fileHelpers");
+const { getAlertMessage } = require("./alert");
 
 const heartbeatPath = path.join(__dirname, "../../heartbeat.json");
+const lastSyncPath  = path.join(__dirname, "../../lastSync.json");
 
 function handleHeartbeat(req, res) {
   try {
-    fs.writeFileSync(heartbeatPath, JSON.stringify({ lastSeen: new Date().toISOString() }));
+    const body = req.body || {};
+    const record = { lastSeen: new Date().toISOString() };
+    if (body.nowPlaying !== undefined) record.nowPlaying = body.nowPlaying;
+    fs.writeFileSync(heartbeatPath, JSON.stringify(record));
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to write heartbeat." });
@@ -16,19 +21,33 @@ function handleHeartbeat(req, res) {
 function handleHealth(req, res) {
   const now = Date.now();
 
+  // VM server uptime
   const uptimeSeconds = Math.floor(process.uptime());
 
   // Pi heartbeat — ok < 5 min, warning 5–15 min, offline > 15 min
-  let pi = { status: "unknown", lastSeenSeconds: null };
+  let pi = { status: "unknown", lastSeenSeconds: null, nowPlaying: null };
   if (fs.existsSync(heartbeatPath)) {
     try {
       const hb = JSON.parse(fs.readFileSync(heartbeatPath, "utf8"));
       const lastSeenSeconds = Math.floor((now - new Date(hb.lastSeen).getTime()) / 1000);
       const status = lastSeenSeconds < 300 ? "ok" : lastSeenSeconds < 900 ? "warning" : "offline";
-      pi = { status, lastSeenSeconds };
+      pi = { status, lastSeenSeconds, nowPlaying: hb.nowPlaying || null };
     } catch {}
   }
 
+  // Last sync from VM to Pi
+  let lastSync = { status: "unknown", lastSyncSeconds: null };
+  if (fs.existsSync(lastSyncPath)) {
+    try {
+      const ls = JSON.parse(fs.readFileSync(lastSyncPath, "utf8"));
+      const lastSyncSeconds = Math.floor((now - new Date(ls.at).getTime()) / 1000);
+      // ok < 10 min, warning 10–20 min, offline > 20 min
+      const status = lastSyncSeconds < 600 ? "ok" : lastSyncSeconds < 1200 ? "warning" : "offline";
+      lastSync = { status, lastSyncSeconds };
+    } catch {}
+  }
+
+  // Uploads folder — file count and total size
   let fileCount = 0;
   let totalMB = 0;
   try {
@@ -40,11 +59,26 @@ function handleHealth(req, res) {
     totalMB = Math.round(totalBytes / 1024 / 1024 * 10) / 10;
   } catch {}
 
-  res.json({
-    server: { status: "ok", uptimeSeconds },
-    pi,
-    uploads: { status: "ok", fileCount, totalMB },
-  });
+  // Disk space on VM
+  let disk = { status: "ok", freeMB: null, totalMB: null };
+  try {
+    const st = fs.statfsSync(uploadsDir);
+    const free  = Math.round(st.bavail * st.bsize / 1024 / 1024);
+    const total = Math.round(st.blocks * st.bsize / 1024 / 1024);
+    const usedPct = Math.round((1 - st.bavail / st.blocks) * 100);
+    // warning > 80% used, offline (critical) > 95% used
+    const status = usedPct > 95 ? "offline" : usedPct > 80 ? "warning" : "ok";
+    disk = { status, freeMB: free, totalMB: total, usedPct };
+  } catch {}
+
+  // Active emergency alert
+  const alertMsg = getAlertMessage();
+  const alert = {
+    status: alertMsg ? "warning" : "ok",
+    message: alertMsg || null,
+  };
+
+  res.json({ server: { status: "ok", uptimeSeconds }, pi, lastSync, uploads: { status: "ok", fileCount, totalMB }, disk, alert });
 }
 
 module.exports = { handleHeartbeat, handleHealth };

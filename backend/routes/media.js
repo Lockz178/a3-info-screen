@@ -190,6 +190,8 @@ router.post("/current", express.json(), (req, res) => {
   res.json({ ok: true });
 });
 
+function getCurrentlyShowing() { return currentlyShowing; }
+
 /*
   PUT /api/media/order — saves the user's custom playback order.
   path.basename strips any directory traversal (e.g. "../../etc/passwd")
@@ -429,3 +431,4 @@ router.delete("/:filename", (req, res) => {
 })();
 
 module.exports = router;
+module.exports.getCurrentlyShowing = getCurrentlyShowing;

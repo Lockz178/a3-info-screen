@@ -7,6 +7,7 @@ const mediaRoutes = require("./backend/routes/media");
 const configRoutes = require("./backend/routes/config");
 const alertRoutes = require("./backend/routes/alert");
 const { handleHeartbeat, handleHealth } = require("./backend/routes/health");
+const { getCurrentlyShowing } = require("./backend/routes/media");
 const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
 const { loadConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
 
@@ -212,6 +213,7 @@ async function syncFromVM() {
     }
     saveDurations(durations);
     saveDisabled(vmFiles.filter(f => !f.enabled).map(f => f.name));
+    fs.writeFileSync(path.join(__dirname, "lastSync.json"), JSON.stringify({ at: new Date().toISOString() }));
     console.log(`[sync] done — ${vmFiles.length} file(s) on VM`);
 
   } catch (err) {
@@ -234,7 +236,7 @@ async function sendHeartbeat() {
     await fetch(`${vmUrl.replace(/\/$/, "")}/api/heartbeat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify({ nowPlaying: getCurrentlyShowing() }),
       signal: AbortSignal.timeout(5000),
     });
   } catch {}

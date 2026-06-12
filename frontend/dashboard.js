@@ -839,22 +839,62 @@ async function fetchHealth() {
   try {
     const res = await apiFetch("/api/health");
     if (!res || !res.ok) return;
-    const data = await res.json();
+    const d = await res.json();
 
-    setHealthDot("server", data.server.status);
-    document.getElementById("detail-server").textContent = fmtUptime(data.server.uptimeSeconds);
+    // VM server
+    setHealthDot("server", d.server.status);
+    document.getElementById("detail-server").textContent = fmtUptime(d.server.uptimeSeconds);
 
-    setHealthDot("pi", data.pi.status);
-    if (data.pi.status === "unknown") {
+    // Pi display
+    setHealthDot("pi", d.pi.status);
+    if (d.pi.status === "unknown") {
       document.getElementById("detail-pi").textContent = "No heartbeat yet";
     } else {
-      const label = data.pi.status === "ok" ? "Online" : data.pi.status === "warning" ? "Delayed" : "Offline";
-      document.getElementById("detail-pi").textContent = `${label} · ${fmtAge(data.pi.lastSeenSeconds)}`;
+      const label = d.pi.status === "ok" ? "Online" : d.pi.status === "warning" ? "Delayed" : "Offline";
+      document.getElementById("detail-pi").textContent = `${label} · ${fmtAge(d.pi.lastSeenSeconds)}`;
     }
 
-    setHealthDot("uploads", data.uploads.status);
+    // Now playing on Pi
+    setHealthDot("nowplaying", d.pi.status === "unknown" ? "unknown" : "ok");
+    if (d.pi.nowPlaying) {
+      const name = d.pi.nowPlaying.replace(/^\d+-/, "").substring(0, 24);
+      document.getElementById("detail-nowplaying").textContent = name;
+    } else {
+      document.getElementById("detail-nowplaying").textContent = d.pi.status === "unknown" ? "Unknown" : "Nothing playing";
+      setHealthDot("nowplaying", "unknown");
+    }
+
+    // Last sync
+    setHealthDot("lastsync", d.lastSync.status);
+    if (d.lastSync.status === "unknown") {
+      document.getElementById("detail-lastsync").textContent = "Never synced";
+    } else {
+      document.getElementById("detail-lastsync").textContent = fmtAge(d.lastSync.lastSyncSeconds);
+    }
+
+    // Alert
+    setHealthDot("alert", d.alert.status);
+    if (d.alert.message) {
+      const short = d.alert.message.length > 28 ? d.alert.message.substring(0, 28) + "…" : d.alert.message;
+      document.getElementById("detail-alert").textContent = short;
+    } else {
+      document.getElementById("detail-alert").textContent = "No active alert";
+    }
+
+    // Uploads
+    setHealthDot("uploads", d.uploads.status);
     document.getElementById("detail-uploads").textContent =
-      `${data.uploads.fileCount} file${data.uploads.fileCount !== 1 ? "s" : ""} · ${data.uploads.totalMB} MB`;
+      `${d.uploads.fileCount} file${d.uploads.fileCount !== 1 ? "s" : ""} · ${d.uploads.totalMB} MB`;
+
+    // Disk space
+    setHealthDot("disk", d.disk.status);
+    if (d.disk.freeMB !== null) {
+      const freeGB = (d.disk.freeMB / 1024).toFixed(1);
+      const totalGB = (d.disk.totalMB / 1024).toFixed(1);
+      document.getElementById("detail-disk").textContent = `${freeGB} GB free of ${totalGB} GB`;
+    } else {
+      document.getElementById("detail-disk").textContent = "Unavailable";
+    }
 
     document.getElementById("healthAge").textContent =
       `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
