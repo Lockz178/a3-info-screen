@@ -1,6 +1,9 @@
 {
   "imageDurationSeconds": 10,
   "maxVideoDurationSeconds": 60,
-  "dashboardPassword": "",
-  "qrUrl": ""
+  "qrUrl": "",
+  "screenOnTime": "07:00",
+  "screenOffTime": "21:00",
+  "screenScheduleEnabled": false,
+  "dashboardPassword": ""
 }
