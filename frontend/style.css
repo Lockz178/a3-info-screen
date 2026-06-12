@@ -1593,6 +1593,86 @@ input[type="range"] {
   border-color: #c0392b;
 }
 
+/* ── Screen schedule card ───────────────────────────────────────────────── */
+
+.schedule-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.schedule-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.schedule-toggle__track {
+  position: absolute;
+  inset: 0;
+  background: #d0bfe8;
+  border-radius: 24px;
+  transition: background 0.2s;
+}
+
+.schedule-toggle__track::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.schedule-toggle input:checked + .schedule-toggle__track {
+  background: #4e008e;
+}
+
+.schedule-toggle input:checked + .schedule-toggle__track::after {
+  transform: translateX(20px);
+}
+
+.schedule-times {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.schedule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-label {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.schedule-input {
+  padding: 8px 12px;
+  border: 1.5px solid #d0bfe8;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #4e008e;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.schedule-input:focus {
+  border-color: #4e008e;
+}
+
 /* ── QR card (dashboard) ────────────────────────────────────────────────── */
 
 .qr-form {

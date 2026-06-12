@@ -12,7 +12,7 @@ router.get("/", (req, res) => {
 */
 router.patch("/", express.json(), (req, res) => {
   const current = loadConfig();
-  const allowed = ["imageDurationSeconds", "maxVideoDurationSeconds", "qrUrl"];
+  const allowed = ["imageDurationSeconds", "maxVideoDurationSeconds", "qrUrl", "screenOnTime", "screenOffTime", "screenScheduleEnabled"];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];

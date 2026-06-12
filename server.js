@@ -9,7 +9,8 @@ const alertRoutes = require("./backend/routes/alert");
 const { handleHeartbeat, handleHealth } = require("./backend/routes/health");
 const { getCurrentlyShowing } = require("./backend/routes/media");
 const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
-const { loadConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
+const { exec } = require("child_process");
+const { loadConfig, saveConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
 
 const app = express();
 const PORT = 3000;
@@ -213,6 +214,17 @@ async function syncFromVM() {
     }
     saveDurations(durations);
     saveDisabled(vmFiles.filter(f => !f.enabled).map(f => f.name));
+
+    // Sync config from VM so settings like screen schedule take effect on Pi
+    try {
+      const cfgRes = await fetch(`${base}/api/config`, { signal: AbortSignal.timeout(10000) });
+      if (cfgRes.ok) {
+        const vmConfig = await cfgRes.json();
+        saveConfig({ ...loadConfig(), ...vmConfig });
+        console.log("[sync] config synced from VM");
+      }
+    } catch {}
+
     fs.writeFileSync(path.join(__dirname, "lastSync.json"), JSON.stringify({ at: new Date().toISOString() }));
     console.log(`[sync] done — ${vmFiles.length} file(s) on VM`);
 
@@ -244,6 +256,22 @@ async function sendHeartbeat() {
 
 sendHeartbeat();
 setInterval(sendHeartbeat, 2 * 60 * 1000);
+
+/*
+  checkScreenSchedule — turns the Pi's HDMI output on or off based on the
+  configured schedule. Runs every minute. Only has any effect on the Pi
+  where vcgencmd is available; on the VM the command simply fails silently.
+*/
+function checkScreenSchedule() {
+  const config = loadConfig();
+  if (!config.screenScheduleEnabled) return;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  if (hhmm === config.screenOnTime)  exec("vcgencmd display_power 1");
+  if (hhmm === config.screenOffTime) exec("vcgencmd display_power 0");
+}
+
+setInterval(checkScreenSchedule, 60 * 1000);
 
 app.listen(PORT, HOST, () => {
   console.log(`A3 Info Screen server running at http://${HOST}:${PORT}`);

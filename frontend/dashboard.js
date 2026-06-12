@@ -781,6 +781,40 @@ document.getElementById("clearAlertBtn").addEventListener("click", async () => {
   if (res.ok) await loadAlert();
 });
 
+// ── Screen schedule ───────────────────────────────────────────────────────
+
+async function loadSchedule() {
+  try {
+    const res = await fetch("/api/config");
+    if (!res.ok) return;
+    const cfg = await res.json();
+    document.getElementById("scheduleEnabled").checked = !!cfg.screenScheduleEnabled;
+    if (cfg.screenOnTime)  document.getElementById("screenOnTime").value  = cfg.screenOnTime;
+    if (cfg.screenOffTime) document.getElementById("screenOffTime").value = cfg.screenOffTime;
+  } catch {}
+}
+
+document.getElementById("saveScheduleBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("scheduleMessage");
+  const res = await apiFetch("/api/config", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      screenScheduleEnabled: document.getElementById("scheduleEnabled").checked,
+      screenOnTime:  document.getElementById("screenOnTime").value,
+      screenOffTime: document.getElementById("screenOffTime").value,
+    }),
+  });
+  if (!res) return;
+  if (res.ok) {
+    msg.textContent = "Schedule saved. Pi will apply it within 5 minutes.";
+    msg.className = "upload-msg upload-msg--success";
+  } else {
+    msg.textContent = "Could not save schedule.";
+    msg.className = "upload-msg upload-msg--error";
+  }
+});
+
 // ── QR code ───────────────────────────────────────────────────────────────
 
 async function loadQrConfig() {
@@ -906,6 +940,7 @@ async function fetchHealth() {
 loadFiles();
 updateNowShowing();
 loadAlert();
+loadSchedule();
 loadQrConfig();
 fetchHealth();
 

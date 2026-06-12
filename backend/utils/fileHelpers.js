@@ -63,7 +63,7 @@ function saveOrder(order) {
   are also used if the file doesn't exist yet (fresh install).
 */
 function loadConfig() {
-  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60, qrUrl: "" };
+  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60, qrUrl: "", screenOnTime: "07:00", screenOffTime: "21:00", screenScheduleEnabled: false };
   if (!fs.existsSync(configPath)) return defaults;
   try {
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));

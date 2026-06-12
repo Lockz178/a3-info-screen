@@ -156,6 +156,33 @@
     <section class="dash-card">
       <div class="dash-card__header">
         <div>
+          <h2 class="dash-card__title">Screen Schedule</h2>
+          <p class="dash-card__desc">Automatically turn the corridor TV on and off each day</p>
+        </div>
+        <label class="schedule-toggle" aria-label="Enable screen schedule">
+          <input type="checkbox" id="scheduleEnabled" />
+          <span class="schedule-toggle__track"></span>
+        </label>
+      </div>
+      <div class="schedule-times" id="scheduleTimes">
+        <div class="schedule-row">
+          <span class="schedule-label">Turn on</span>
+          <input type="time" id="screenOnTime" class="schedule-input" value="07:00" />
+        </div>
+        <div class="schedule-row">
+          <span class="schedule-label">Turn off</span>
+          <input type="time" id="screenOffTime" class="schedule-input" value="21:00" />
+        </div>
+      </div>
+      <div class="alert-actions" style="margin-top:14px">
+        <button id="saveScheduleBtn" class="dash-action-btn dash-action-btn--primary">Save</button>
+      </div>
+      <div id="scheduleMessage" class="upload-msg" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="dash-card">
+      <div class="dash-card__header">
+        <div>
           <h2 class="dash-card__title">QR Code</h2>
           <p class="dash-card__desc">Shows a scannable QR code in the corner of the corridor screen</p>
         </div>
