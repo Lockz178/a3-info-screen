@@ -271,6 +271,23 @@ function checkScreenSchedule() {
   if (hhmm === config.screenOffTime) exec("vcgencmd display_power 0");
 }
 
+/*
+  On startup, immediately apply the correct screen state so that a Pi
+  reboot during scheduled hours turns the screen back on without waiting
+  until the next on-time the following day.
+*/
+function applyScreenStateOnStartup() {
+  const config = loadConfig();
+  if (!config.screenScheduleEnabled) return;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const on  = config.screenOnTime;
+  const off = config.screenOffTime;
+  const inWindow = on < off ? (hhmm >= on && hhmm < off) : (hhmm >= on || hhmm < off);
+  exec(`vcgencmd display_power ${inWindow ? 1 : 0}`);
+}
+
+applyScreenStateOnStartup();
 setInterval(checkScreenSchedule, 60 * 1000);
 
 app.listen(PORT, HOST, () => {
