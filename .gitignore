@@ -2,6 +2,5 @@ node_modules/
 uploads/
 durations.json
 heartbeat.json
-lastSync.json
 .env
 .DS_Store

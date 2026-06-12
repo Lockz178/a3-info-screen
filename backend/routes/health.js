@@ -4,13 +4,13 @@ const { uploadsDir } = require("../utils/fileHelpers");
 const { getAlertMessage } = require("./alert");
 
 const heartbeatPath = path.join(__dirname, "../../heartbeat.json");
-const lastSyncPath  = path.join(__dirname, "../../lastSync.json");
 
 function handleHeartbeat(req, res) {
   try {
     const body = req.body || {};
     const record = { lastSeen: new Date().toISOString() };
     if (body.nowPlaying !== undefined) record.nowPlaying = body.nowPlaying;
+    if (body.lastSyncAt !== undefined) record.lastSyncAt = body.lastSyncAt;
     fs.writeFileSync(heartbeatPath, JSON.stringify(record));
     res.json({ ok: true });
   } catch {
@@ -31,21 +31,16 @@ function handleHealth(req, res) {
       const hb = JSON.parse(fs.readFileSync(heartbeatPath, "utf8"));
       const lastSeenSeconds = Math.floor((now - new Date(hb.lastSeen).getTime()) / 1000);
       const status = lastSeenSeconds < 300 ? "ok" : lastSeenSeconds < 900 ? "warning" : "offline";
-      pi = { status, lastSeenSeconds, nowPlaying: hb.nowPlaying || null };
+      const lastSyncSeconds = hb.lastSyncAt ? Math.floor((now - new Date(hb.lastSyncAt).getTime()) / 1000) : null;
+      const syncStatus = lastSyncSeconds === null ? "unknown" : lastSyncSeconds < 600 ? "ok" : lastSyncSeconds < 1200 ? "warning" : "offline";
+      pi = { status, lastSeenSeconds, nowPlaying: hb.nowPlaying || null, lastSyncSeconds, syncStatus };
     } catch {}
   }
 
-  // Last sync from VM to Pi
-  let lastSync = { status: "unknown", lastSyncSeconds: null };
-  if (fs.existsSync(lastSyncPath)) {
-    try {
-      const ls = JSON.parse(fs.readFileSync(lastSyncPath, "utf8"));
-      const lastSyncSeconds = Math.floor((now - new Date(ls.at).getTime()) / 1000);
-      // ok < 10 min, warning 10–20 min, offline > 20 min
-      const status = lastSyncSeconds < 600 ? "ok" : lastSyncSeconds < 1200 ? "warning" : "offline";
-      lastSync = { status, lastSyncSeconds };
-    } catch {}
-  }
+  // Last sync — reported by Pi via heartbeat
+  const lastSync = pi.lastSyncSeconds !== undefined
+    ? { status: pi.syncStatus, lastSyncSeconds: pi.lastSyncSeconds }
+    : { status: "unknown", lastSyncSeconds: null };
 
   // Uploads folder — file count and total size
   let fileCount = 0;

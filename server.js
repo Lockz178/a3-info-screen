@@ -225,7 +225,7 @@ async function syncFromVM() {
       }
     } catch {}
 
-    fs.writeFileSync(path.join(__dirname, "lastSync.json"), JSON.stringify({ at: new Date().toISOString() }));
+    lastSyncAt = new Date().toISOString();
     console.log(`[sync] done — ${vmFiles.length} file(s) on VM`);
 
   } catch (err) {
@@ -241,6 +241,8 @@ setInterval(syncFromVM, 5 * 60 * 1000);
   show whether the corridor display is online. Only runs on the Pi where
   VM_SYNC_URL is set; the VM never calls itself.
 */
+let lastSyncAt = null;
+
 async function sendHeartbeat() {
   const vmUrl = process.env.VM_SYNC_URL;
   if (!vmUrl) return;
@@ -248,7 +250,7 @@ async function sendHeartbeat() {
     await fetch(`${vmUrl.replace(/\/$/, "")}/api/heartbeat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nowPlaying: getCurrentlyShowing() }),
+      body: JSON.stringify({ nowPlaying: getCurrentlyShowing(), lastSyncAt }),
       signal: AbortSignal.timeout(5000),
     });
   } catch {}
