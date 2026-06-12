@@ -6,6 +6,7 @@ const path = require("path");
 const mediaRoutes = require("./backend/routes/media");
 const configRoutes = require("./backend/routes/config");
 const alertRoutes = require("./backend/routes/alert");
+const { handleHeartbeat, handleHealth } = require("./backend/routes/health");
 const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
 const { loadConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
 
@@ -108,6 +109,12 @@ app.use("/thumbnails", express.static(path.join(__dirname, "thumbnails")));
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "A3 Info Screen server is running" });
 });
+
+// Pi calls this every 2 minutes to report it is alive
+app.post("/api/heartbeat", handleHeartbeat);
+
+// Dashboard reads this to show system health status
+app.get("/api/health", requireAuth, handleHealth);
 
 /*
   Protect write operations on /api/media. GET requests (used by the slideshow)
@@ -214,6 +221,27 @@ async function syncFromVM() {
 
 syncFromVM();
 setInterval(syncFromVM, 5 * 60 * 1000);
+
+/*
+  sendHeartbeat — Pi reports to the VM every 2 minutes so the dashboard can
+  show whether the corridor display is online. Only runs on the Pi where
+  VM_SYNC_URL is set; the VM never calls itself.
+*/
+async function sendHeartbeat() {
+  const vmUrl = process.env.VM_SYNC_URL;
+  if (!vmUrl) return;
+  try {
+    await fetch(`${vmUrl.replace(/\/$/, "")}/api/heartbeat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {}
+}
+
+sendHeartbeat();
+setInterval(sendHeartbeat, 2 * 60 * 1000);
 
 app.listen(PORT, HOST, () => {
   console.log(`A3 Info Screen server running at http://${HOST}:${PORT}`);

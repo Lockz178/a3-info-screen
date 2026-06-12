@@ -39,6 +39,7 @@
     </div>
   </header>
 
+  <div class="dash-layout">
   <main class="dash-main">
 
     <section class="dash-card">
@@ -171,6 +172,38 @@
     </section>
 
   </main>
+
+  <aside class="health-panel">
+    <div class="health-panel__header">
+      <span class="health-panel__title">System Health</span>
+      <span class="health-panel__age" id="healthAge"></span>
+    </div>
+    <div class="health-items">
+      <div class="health-item">
+        <span class="health-dot health-dot--unknown" id="dot-server"></span>
+        <div class="health-item__body">
+          <span class="health-item__name">VM Server</span>
+          <span class="health-item__detail" id="detail-server">Loading&hellip;</span>
+        </div>
+      </div>
+      <div class="health-item">
+        <span class="health-dot health-dot--unknown" id="dot-pi"></span>
+        <div class="health-item__body">
+          <span class="health-item__name">Pi Display</span>
+          <span class="health-item__detail" id="detail-pi">Loading&hellip;</span>
+        </div>
+      </div>
+      <div class="health-item">
+        <span class="health-dot health-dot--unknown" id="dot-uploads"></span>
+        <div class="health-item__body">
+          <span class="health-item__name">Uploads</span>
+          <span class="health-item__detail" id="detail-uploads">Loading&hellip;</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  </div>
 
   <footer class="dash-footer">Built by Loc Phan</footer>
 

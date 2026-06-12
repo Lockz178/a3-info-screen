@@ -816,12 +816,59 @@ document.getElementById("clearQrBtn").addEventListener("click", () => {
   document.getElementById("saveQrBtn").click();
 });
 
+// ── System Health ─────────────────────────────────────────────────────────
+
+function fmtAge(seconds) {
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  return `${Math.floor(seconds / 3600)}h ago`;
+}
+
+function fmtUptime(seconds) {
+  if (seconds < 60) return `Up ${seconds}s`;
+  if (seconds < 3600) return `Up ${Math.floor(seconds / 60)}m`;
+  return `Up ${Math.floor(seconds / 3600)}h`;
+}
+
+function setHealthDot(id, status) {
+  const dot = document.getElementById(`dot-${id}`);
+  if (dot) dot.className = `health-dot health-dot--${status}`;
+}
+
+async function fetchHealth() {
+  try {
+    const res = await apiFetch("/api/health");
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    setHealthDot("server", data.server.status);
+    document.getElementById("detail-server").textContent = fmtUptime(data.server.uptimeSeconds);
+
+    setHealthDot("pi", data.pi.status);
+    if (data.pi.status === "unknown") {
+      document.getElementById("detail-pi").textContent = "No heartbeat yet";
+    } else {
+      const label = data.pi.status === "ok" ? "Online" : data.pi.status === "warning" ? "Delayed" : "Offline";
+      document.getElementById("detail-pi").textContent = `${label} · ${fmtAge(data.pi.lastSeenSeconds)}`;
+    }
+
+    setHealthDot("uploads", data.uploads.status);
+    document.getElementById("detail-uploads").textContent =
+      `${data.uploads.fileCount} file${data.uploads.fileCount !== 1 ? "s" : ""} · ${data.uploads.totalMB} MB`;
+
+    document.getElementById("healthAge").textContent =
+      `Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } catch {}
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 
 loadFiles();
 updateNowShowing();
 loadAlert();
 loadQrConfig();
+fetchHealth();
 
 setInterval(loadFiles, refreshInterval);
 setInterval(updateNowShowing, 2000);
+setInterval(fetchHealth, 30000);

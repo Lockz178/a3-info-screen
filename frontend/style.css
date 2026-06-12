@@ -155,13 +155,101 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.dash-main {
-  max-width: 680px;
+.dash-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1020px;
   margin: 0 auto;
   padding: 36px 24px 72px;
+}
+
+.dash-main {
+  flex: 1;
+  min-width: 0;
+  max-width: 680px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* ── Health panel ────────────────────────────────────────────────────────── */
+
+.health-panel {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 88px;
+  background: #fff;
+  border: 1px solid #2d3f55;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.health-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.health-panel__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4e008e;
+}
+
+.health-panel__age {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.health-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.health-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.health-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  background: #94a3b8;
+  transition: background 0.4s;
+}
+
+.health-dot--ok      { background: #22c55e; }
+.health-dot--warning { background: #f59e0b; }
+.health-dot--offline { background: #ef4444; }
+.health-dot--unknown { background: #94a3b8; }
+
+.health-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.health-item__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.health-item__detail {
+  font-size: 12px;
+  color: #64748b;
 }
 
 /* ── Cards ───────────────────────────────────────────────────────────────── */
@@ -1230,8 +1318,14 @@ input[type="range"] {
     padding: 8px 12px;
   }
 
-  .dash-main {
+  .dash-layout {
+    flex-direction: column;
     padding: 20px 16px 56px;
+  }
+
+  .health-panel {
+    width: 100%;
+    position: static;
   }
 
   .dash-card {
