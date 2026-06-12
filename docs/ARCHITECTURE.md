@@ -60,14 +60,18 @@ The system has two main components: a **VM** that hosts the dashboard for conten
 - Runs the same Node.js server locally on port 3000
 - Chromium opens `localhost:3000` in kiosk mode on boot (fullscreen, no browser UI)
 - systemd starts the Node.js server on boot and restarts it on crash
-- Syncs content from the VM every 5 minutes — downloads new files, removes deleted ones
+- Syncs content and config from the VM every 5 minutes — downloads new files, removes deleted ones, and overwrites local `config.json` with the VM's version so settings like screen schedule take effect automatically
+- Sends a heartbeat to the VM every 2 minutes so the health panel can show Pi status
 - If the VM is unreachable, the Pi keeps showing its last known local content
+- Turns the HDMI output on/off at configured times using `vcgencmd display_power`
 
 ### Dashboard
 - Single-page web app served by the Node.js server
 - Accessible from any browser — no app or VPN needed
 - Teachers upload, reorder, and manage slides from here
 - Shows a live "Now Showing" indicator for whichever slide is currently on the TV
+- System Health panel shows live status of VM, Pi, sync, alerts, uploads, and disk space
+- Screen Schedule card controls the daily on/off times for the corridor TV
 
 ### Slideshow
 - Fullscreen page served at the root URL (`/`)
@@ -77,15 +81,16 @@ The system has two main components: a **VM** that hosts the dashboard for conten
 
 ## Data flow
 
+**Media and config sync (every 5 minutes):**
 ```
-Teacher uploads file
+Teacher uploads file or changes setting on dashboard
         │
         ▼
-VM stores file in uploads/
+VM stores file / updates config.json
         │
         │  (up to 5 minutes later)
         ▼
-Pi syncs file from VM
+Pi syncs files + config from VM
         │
         ▼
 Chromium reloads media list
@@ -94,17 +99,40 @@ Chromium reloads media list
 New slide appears on corridor TV
 ```
 
+**Pi heartbeat (every 2 minutes):**
+```
+Pi server POSTs to VM /api/heartbeat
+        │  (includes currently playing file)
+        ▼
+VM stores last seen time + now playing
+        │
+        ▼
+Health panel shows Pi status + now playing
+```
+
 ## File structure on disk
 
 ```
 004-a3-info-screen/
-├── server.js          # Node.js server (API + file serving)
-├── config.json        # Application settings
+├── server.js          # Node.js server (API + file serving + sync + schedule)
+├── config.json        # Application settings (synced from VM to Pi)
 ├── order.json         # Slide order
 ├── durations.json     # Per-file display durations
 ├── disabled.json      # List of disabled slides
+├── heartbeat.json     # Last Pi check-in time (VM only, not in git)
+├── lastSync.json      # Last successful sync time (Pi only, not in git)
 ├── uploads/           # Uploaded media files
 ├── thumbnails/        # Auto-generated thumbnails
+├── backend/
+│   ├── routes/
+│   │   ├── media.js   # File upload, list, delete, reorder
+│   │   ├── config.js  # Settings read/write
+│   │   ├── alert.js   # Emergency alert
+│   │   └── health.js  # System health endpoint + heartbeat receiver
+│   ├── middleware/
+│   │   └── auth.js    # Session auth middleware
+│   └── utils/
+│       └── fileHelpers.js  # Shared file paths and helpers
 ├── frontend/
 │   ├── index.html     # Slideshow page
 │   ├── script.js      # Slideshow logic

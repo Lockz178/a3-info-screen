@@ -86,6 +86,37 @@ If a QR code URL has been configured, a QR code is shown on the dashboard. Visit
 
 ---
 
+## Screen schedule
+
+The Screen Schedule card lets you set a daily on and off time for the corridor TV.
+
+1. Set the **Turn on** time (e.g. 07:00)
+2. Set the **Turn off** time (e.g. 21:00)
+3. Toggle the switch on
+4. Click **Save**
+
+The Pi picks up the new schedule within 5 minutes. At the configured times, the HDMI output turns on or off automatically — the server keeps running in the background. If the Pi reboots during scheduled hours, the screen turns back on straight away.
+
+To disable the schedule, toggle the switch off and click Save.
+
+---
+
+## System health
+
+The System Health panel on the right side of the dashboard shows the live status of each part of the system. It refreshes every 30 seconds.
+
+| Indicator | What it shows |
+|---|---|
+| **VM Server** | Always green when the dashboard is reachable. Shows server uptime. |
+| **Pi Display** | Green if the Pi checked in within the last 5 minutes, amber if 5–15 minutes, red if over 15 minutes. |
+| **Now Playing** | The file currently showing on the corridor TV. |
+| **Last Sync** | How long ago the Pi last synced files from the VM. |
+| **Alert** | Green if no alert is active, amber if an emergency alert is currently showing. |
+| **Uploads** | Number of files and total size in the uploads folder. |
+| **Disk Space** | Free and total disk space on the VM. |
+
+---
+
 ## What the TV shows when there are no files
 
 If no files have been uploaded, or all slides are disabled, the TV shows a placeholder screen with the TAMK logo and the text "A3 Info Screen".
@@ -101,3 +132,6 @@ If no files have been uploaded, or all slides are disabled, the TV shows a place
 | Video not playing | Make sure the file is MP4 or MOV format. |
 | TV showing old content | The Pi syncs from the server every 5 minutes. Wait and check again. |
 | Alert not clearing | Refresh the dashboard and click Clear Alert again. |
+| Pi Display showing red in health panel | The Pi has not sent a heartbeat recently. Check that the Pi is powered on and connected to the network. |
+| Screen not turning on/off at scheduled time | Check that the schedule is enabled and saved. The Pi applies the schedule within 5 minutes of saving. |
+| Last Sync showing red in health panel | The Pi cannot reach the VM. Check the Pi's network connection. |
