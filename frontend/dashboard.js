@@ -562,6 +562,7 @@ function buildFileItem(file, index, maxDuration) {
 */
 let maxVideoDuration = 60;
 let defaultImageDuration = 10;
+let piNowPlaying = undefined; // undefined = not fetched yet, null = nothing playing
 
 /*
   loadFiles — fetches the media list and config together, then rebuilds the
@@ -718,10 +719,16 @@ uploadForm.addEventListener("submit", async (e) => {
 */
 async function updateNowShowing() {
   try {
-    const res = await fetch("/api/media/current");
-    if (!res.ok) return;
-    const data = await res.json();
-    const name = data.name || null;
+    let name;
+    if (piNowPlaying !== undefined) {
+      // Pi has reported what it's showing — use that (it's the actual TV)
+      name = piNowPlaying;
+    } else {
+      // Fallback to VM's own current until first health fetch arrives
+      const res = await fetch("/api/media/current");
+      if (!res.ok) return;
+      name = (await res.json()).name || null;
+    }
     document.querySelectorAll(".file-item").forEach(li => {
       li.classList.toggle("file-item--active", !!name && li.dataset.filename === name);
     });
@@ -887,6 +894,9 @@ async function fetchHealth() {
       const label = d.pi.status === "ok" ? "Online" : d.pi.status === "warning" ? "Delayed" : "Offline";
       document.getElementById("detail-pi").textContent = `${label} · ${fmtAge(d.pi.lastSeenSeconds)}`;
     }
+
+    // Store Pi's now playing for use in media library highlighting
+    piNowPlaying = d.pi.nowPlaying;
 
     // Now playing on Pi
     setHealthDot("nowplaying", d.pi.status === "unknown" ? "unknown" : "ok");
