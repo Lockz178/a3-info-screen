@@ -260,25 +260,18 @@ sendHeartbeat();
 setInterval(sendHeartbeat, 2 * 60 * 1000);
 
 /*
-  checkScreenSchedule — turns the Pi's HDMI output on or off based on the
-  configured schedule. Runs every minute. Only has any effect on the Pi
-  where vcgencmd is available; on the VM the command simply fails silently.
-*/
-function checkScreenSchedule() {
-  const config = loadConfig();
-  if (!config.screenScheduleEnabled) return;
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  if (hhmm === config.screenOnTime)  exec("vcgencmd display_power 1");
-  if (hhmm === config.screenOffTime) exec("vcgencmd display_power 0");
-}
+  applyScreenSchedule — turns the Pi's HDMI output on or off based on the
+  configured schedule. This is idempotent: every run it works out whether
+  the current time falls inside the on-window and sets the display to match,
+  rather than firing only at the exact on/off minute. The edge-triggered
+  approach failed because setInterval drifts and could skip the precise
+  on/off minute, leaving the screen stuck on overnight. Re-applying the
+  correct state every minute is harmless and self-correcting.
 
-/*
-  On startup, immediately apply the correct screen state so that a Pi
-  reboot during scheduled hours turns the screen back on without waiting
-  until the next on-time the following day.
+  Only has any effect on the Pi where vcgencmd is available; on the VM the
+  command simply fails silently.
 */
-function applyScreenStateOnStartup() {
+function applyScreenSchedule() {
   const config = loadConfig();
   if (!config.screenScheduleEnabled) return;
   const now = new Date();
@@ -289,8 +282,10 @@ function applyScreenStateOnStartup() {
   exec(`vcgencmd display_power ${inWindow ? 1 : 0}`);
 }
 
-applyScreenStateOnStartup();
-setInterval(checkScreenSchedule, 60 * 1000);
+// Apply immediately on startup (so a reboot during/outside hours is correct
+// without waiting), then keep it correct every minute.
+applyScreenSchedule();
+setInterval(applyScreenSchedule, 60 * 1000);
 
 app.listen(PORT, HOST, () => {
   console.log(`A3 Info Screen server running at http://${HOST}:${PORT}`);

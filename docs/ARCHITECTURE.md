@@ -63,7 +63,7 @@ The system has two main components: a **VM** that hosts the dashboard for conten
 - Syncs content and config from the VM every 5 minutes — downloads new files, removes deleted ones, and overwrites local `config.json` with the VM's version so settings like screen schedule take effect automatically
 - Sends a heartbeat to the VM every 2 minutes so the health panel can show Pi status
 - If the VM is unreachable, the Pi keeps showing its last known local content
-- Turns the HDMI output on/off at configured times using `vcgencmd display_power`
+- Keeps the HDMI output on during the scheduled window and off outside it using `vcgencmd display_power`, re-applying the correct state every minute so a missed on/off minute can't leave the screen stuck
 
 ### Dashboard
 - Single-page web app served by the Node.js server

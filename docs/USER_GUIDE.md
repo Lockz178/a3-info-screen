@@ -95,7 +95,7 @@ The Screen Schedule card lets you set a daily on and off time for the corridor T
 3. Toggle the switch on
 4. Click **Save**
 
-The Pi picks up the new schedule within 5 minutes. At the configured times, the HDMI output turns on or off automatically — the server keeps running in the background. If the Pi reboots during scheduled hours, the screen turns back on straight away.
+The Pi picks up the new schedule within 5 minutes. During the on-window the HDMI output is kept on, and outside it the screen is kept off to save power — the Pi re-checks every minute, so the screen always matches the schedule even if the exact on/off minute is missed. The server keeps running in the background. If the Pi reboots during scheduled hours, the screen turns back on straight away.
 
 To disable the schedule, toggle the switch off and click Save.
 
