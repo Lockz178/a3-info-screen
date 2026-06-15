@@ -1,6 +1,6 @@
 # A3 Info Screen
 
-This repository contains the project work for the A3 Info Screen project in Practical Training 2, summer 2026.
+This repository contains the project work for the A3 Info Screen project in Practical Training 2, summer 2026. Designed, built, and deployed solo by **Loc Phan**.
 
 ## Project goal
 
@@ -17,19 +17,16 @@ A Raspberry Pi-powered information screen system for the A3 corridor TV at TAMK.
 - A **VM** (`a3info.project.tamk.cloud`) hosts the dashboard so teachers can upload from anywhere.
 - The Pi syncs content from the VM automatically every 5 minutes.
 
-## Team
+## Author
 
-- Mari Mailisalo
-- Lauri Tanhuanpää
-- Sofia Tuomiranta
-- Loc Phan
+This project was developed entirely by **Loc Phan** — from design and backend to the Raspberry Pi deployment and dashboard.
 
 ## Project information
 
 - Course: Practical Training 2
 - Project ID: 004
 - Project name: A3 Info Screen
-- Team: 4
+- Author: Loc Phan
 - Version control: TAMK GitLab
 
 ## Technologies
