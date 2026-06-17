@@ -8,7 +8,7 @@ const configRoutes = require("./backend/routes/config");
 const alertRoutes = require("./backend/routes/alert");
 const { handleHeartbeat, handleHealth } = require("./backend/routes/health");
 const { getCurrentlyShowing } = require("./backend/routes/media");
-const { requireAuth, requireAuthPage } = require("./backend/middleware/auth");
+const { requireAuth, requireAuthPage, isAuthed, rememberToken, REMEMBER_COOKIE } = require("./backend/middleware/auth");
 const { exec } = require("child_process");
 const { loadConfig, saveConfig, uploadsDir, saveOrder, saveDurations, saveDisabled } = require("./backend/utils/fileHelpers");
 
@@ -46,23 +46,32 @@ app.use(express.json());
   GET  /api/auth/status: lets the login page know if auth is needed.
 */
 app.post("/api/auth/login", (req, res) => {
-  const { password } = req.body;
+  const { password, remember } = req.body;
   const config = loadConfig();
   if (!config.dashboardPassword || password === config.dashboardPassword) {
     req.session.authenticated = true;
+    // "Remember me": a persistent cookie that stays valid until the password
+    // changes (the token is derived from the password). Survives restarts,
+    // unlike the in-memory session.
+    if (remember && config.dashboardPassword) {
+      res.cookie(REMEMBER_COOKIE, rememberToken(config.dashboardPassword), {
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        sameSite: "lax",
+      });
+    }
     return res.json({ ok: true });
   }
   return res.status(401).json({ error: "Incorrect password." });
 });
 
 app.post("/api/auth/logout", (req, res) => {
+  res.clearCookie(REMEMBER_COOKIE);
   req.session.destroy(() => res.json({ ok: true }));
 });
 
 app.get("/api/auth/status", (req, res) => {
-  const config = loadConfig();
-  const needsPassword = !!config.dashboardPassword;
-  res.json({ authenticated: !needsPassword || !!(req.session && req.session.authenticated) });
+  res.json({ authenticated: isAuthed(req) });
 });
 
 /*

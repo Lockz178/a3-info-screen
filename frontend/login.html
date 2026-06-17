@@ -34,6 +34,10 @@
           placeholder="Enter dashboard password"
           required
         />
+        <label class="login-remember">
+          <input type="checkbox" id="rememberInput" />
+          <span>Remember me on this device</span>
+        </label>
         <div id="loginError" class="login-error" hidden></div>
         <button type="submit" class="button button--upload login-btn">
           <div class="wave"></div>
@@ -60,11 +64,12 @@
       e.preventDefault();
       errorEl.hidden = true;
       const password = document.getElementById("passwordInput").value;
+      const remember = document.getElementById("rememberInput").checked;
       try {
         const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ password, remember }),
         });
         if (res.ok) {
           window.location.href = "/dashboard.html";
