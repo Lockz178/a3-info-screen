@@ -2,8 +2,14 @@ const express = require("express");
 const router = express.Router();
 const { loadConfig, saveConfig } = require("../utils/fileHelpers");
 
+/*
+  GET /api/config is public (the dashboard and Pi read it without auth), so we
+  must never expose the login secret. Strip dashboardPassword from the response;
+  the login route reads it server-side from config directly.
+*/
 router.get("/", (req, res) => {
-  res.status(200).json(loadConfig());
+  const { dashboardPassword, ...safe } = loadConfig();
+  res.status(200).json(safe);
 });
 
 /*
