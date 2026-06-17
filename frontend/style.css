@@ -1435,6 +1435,21 @@ input[type="range"] {
   color: #334155;
 }
 
+.login-eye:active {
+  transform: translateY(-50%) scale(0.9);
+}
+
+/* Quick pop when toggling password visibility. */
+@keyframes eye-pop {
+  0%   { transform: scale(0.5); opacity: 0.3; }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.login-eye .eye-anim {
+  animation: eye-pop 0.25s ease;
+}
+
 /* Caps Lock warning shown below the password field. */
 .login-caps {
   display: flex;
