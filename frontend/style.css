@@ -1503,6 +1503,83 @@ input[type="range"] {
   margin-bottom: 8px;
 }
 
+/* Header row: presets label on the left, the Edit toggle on the right. */
+.alert-presets__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.alert-presets__head .alert-presets__label {
+  margin-bottom: 0;
+}
+
+.alert-presets__edit {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.alert-presets__edit:hover {
+  text-decoration: underline;
+}
+
+/* Inline editor: one row per preset (label + message + remove), then actions. */
+.preset-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.preset-row__label {
+  flex: 0 0 35%;
+}
+
+.preset-row__message {
+  flex: 1;
+}
+
+.preset-row__remove {
+  flex: 0 0 auto;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  width: 36px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.preset-row__remove:hover {
+  background: #fecaca;
+}
+
+.alert-presets__add {
+  background: none;
+  border: 1px dashed #cbd5e1;
+  color: #475569;
+  border-radius: 8px;
+  padding: 8px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.alert-presets__add:hover {
+  background: #f8fafc;
+}
+
+.alert-presets__editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .alert-presets__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

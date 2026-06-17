@@ -63,7 +63,22 @@ function saveOrder(order) {
   are also used if the file doesn't exist yet (fresh install).
 */
 function loadConfig() {
-  const defaults = { imageDurationSeconds: 10, maxVideoDurationSeconds: 60, qrUrl: "", screenOnTime: "07:00", screenOffTime: "21:00", screenScheduleEnabled: false };
+  const defaults = {
+    imageDurationSeconds: 10,
+    maxVideoDurationSeconds: 60,
+    qrUrl: "",
+    screenOnTime: "07:00",
+    screenOffTime: "21:00",
+    screenScheduleEnabled: false,
+    // Emergency alert quick-press buttons. Editable from the dashboard; each
+    // preset is a button label and the full-screen message it sends.
+    alertPresets: [
+      { label: "🔥 Fire Alarm", message: "FIRE ALARM — Evacuate immediately via the nearest exit" },
+      { label: "🚨 Evacuation", message: "BUILDING EVACUATION — Please leave the building now" },
+      { label: "⚠️ Emergency",  message: "EMERGENCY — Please follow staff instructions immediately" },
+      { label: "🧯 Fire Drill",  message: "FIRE DRILL — This is a drill, please evacuate calmly" },
+    ],
+  };
   if (!fs.existsSync(configPath)) return defaults;
   try {
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));

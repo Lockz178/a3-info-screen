@@ -12,10 +12,20 @@ router.get("/", (req, res) => {
 */
 router.patch("/", express.json(), (req, res) => {
   const current = loadConfig();
-  const allowed = ["imageDurationSeconds", "maxVideoDurationSeconds", "qrUrl", "screenOnTime", "screenOffTime", "screenScheduleEnabled"];
+  const allowed = ["imageDurationSeconds", "maxVideoDurationSeconds", "qrUrl", "screenOnTime", "screenOffTime", "screenScheduleEnabled", "alertPresets"];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+
+  // Sanitise alert presets: keep only well-formed {label, message} entries
+  // with non-empty trimmed text, and cap the count so the dashboard grid and
+  // config file can't be flooded with junk.
+  if (updates.alertPresets !== undefined) {
+    updates.alertPresets = (Array.isArray(updates.alertPresets) ? updates.alertPresets : [])
+      .map(p => ({ label: String(p?.label ?? "").trim().slice(0, 40), message: String(p?.message ?? "").trim().slice(0, 200) }))
+      .filter(p => p.label && p.message)
+      .slice(0, 8);
   }
   const updated = { ...current, ...updates };
   try {

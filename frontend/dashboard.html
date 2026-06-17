@@ -109,20 +109,19 @@
         <span id="alertCurrentText"></span>
       </div>
       <div class="alert-presets">
-        <p class="alert-presets__label">Quick presets — one tap to activate:</p>
-        <div class="alert-presets__grid">
-          <button class="alert-preset-btn" data-message="FIRE ALARM — Evacuate immediately via the nearest exit">
-            🔥 Fire Alarm
-          </button>
-          <button class="alert-preset-btn" data-message="BUILDING EVACUATION — Please leave the building now">
-            🚨 Evacuation
-          </button>
-          <button class="alert-preset-btn" data-message="EMERGENCY — Please follow staff instructions immediately">
-            ⚠️ Emergency
-          </button>
-          <button class="alert-preset-btn" data-message="FIRE DRILL — This is a drill, please evacuate calmly">
-            🧯 Fire Drill
-          </button>
+        <div class="alert-presets__head">
+          <p class="alert-presets__label">Quick presets — one tap to activate:</p>
+          <button id="editPresetsBtn" class="alert-presets__edit" type="button">✏️ Edit</button>
+        </div>
+        <div class="alert-presets__grid" id="alertPresetsGrid"></div>
+        <div class="alert-presets__editor" id="alertPresetsEditor" hidden>
+          <div id="alertPresetsRows"></div>
+          <button id="addPresetBtn" class="alert-presets__add" type="button">+ Add preset</button>
+          <div class="alert-presets__editor-actions">
+            <button id="savePresetsBtn" class="dash-action-btn dash-action-btn--primary">Save presets</button>
+            <button id="cancelPresetsBtn" class="dash-action-btn">Cancel</button>
+          </div>
+          <p id="presetsMessage" class="upload-msg" role="status" aria-live="polite"></p>
         </div>
       </div>
       <div class="alert-form">

@@ -778,8 +778,122 @@ document.getElementById("activateAlertBtn").addEventListener("click", async () =
   await activateAlert(message);
 });
 
-document.querySelectorAll(".alert-preset-btn").forEach(btn => {
-  btn.addEventListener("click", () => activateAlert(btn.dataset.message));
+/*
+  Emergency alert presets are editable. They live in config.json (alertPresets)
+  and are rendered here: the grid shows one clickable button per preset, and an
+  inline editor lets the user change labels/messages, add presets, or remove
+  them. Saving PATCHes /api/config; the server sanitises the list.
+*/
+let currentPresets = [];
+
+async function loadPresets() {
+  try {
+    const res = await fetch("/api/config");
+    if (!res.ok) return;
+    const cfg = await res.json();
+    currentPresets = Array.isArray(cfg.alertPresets) ? cfg.alertPresets : [];
+    renderPresets();
+  } catch {}
+}
+
+function renderPresets() {
+  const grid = document.getElementById("alertPresetsGrid");
+  grid.innerHTML = "";
+  currentPresets.forEach(p => {
+    const btn = document.createElement("button");
+    btn.className = "alert-preset-btn";
+    btn.type = "button";
+    btn.textContent = p.label;
+    btn.addEventListener("click", () => activateAlert(p.message));
+    grid.appendChild(btn);
+  });
+}
+
+function renderPresetEditor() {
+  const rows = document.getElementById("alertPresetsRows");
+  rows.innerHTML = "";
+  currentPresets.forEach((p, i) => rows.appendChild(buildPresetRow(p, i)));
+}
+
+function buildPresetRow(preset, index) {
+  const row = document.createElement("div");
+  row.className = "preset-row";
+
+  const label = document.createElement("input");
+  label.className = "login-input preset-row__label";
+  label.placeholder = "Button label";
+  label.maxLength = 40;
+  label.value = preset.label || "";
+
+  const message = document.createElement("input");
+  message.className = "login-input preset-row__message";
+  message.placeholder = "Full-screen message";
+  message.maxLength = 200;
+  message.value = preset.message || "";
+
+  const remove = document.createElement("button");
+  remove.className = "preset-row__remove";
+  remove.type = "button";
+  remove.textContent = "✕";
+  remove.title = "Remove preset";
+  remove.addEventListener("click", () => {
+    collectPresetInputs();          // keep edits to the other rows
+    currentPresets.splice(index, 1);
+    renderPresetEditor();
+  });
+
+  row.append(label, message, remove);
+  return row;
+}
+
+// Read the editor inputs back into currentPresets (so add/remove preserve edits).
+function collectPresetInputs() {
+  const rows = document.querySelectorAll("#alertPresetsRows .preset-row");
+  currentPresets = Array.from(rows).map(r => ({
+    label: r.querySelector(".preset-row__label").value.trim(),
+    message: r.querySelector(".preset-row__message").value.trim(),
+  }));
+}
+
+document.getElementById("editPresetsBtn").addEventListener("click", () => {
+  renderPresetEditor();
+  document.getElementById("alertPresetsEditor").hidden = false;
+  document.getElementById("alertPresetsGrid").hidden = true;
+});
+
+document.getElementById("cancelPresetsBtn").addEventListener("click", () => {
+  document.getElementById("alertPresetsEditor").hidden = true;
+  document.getElementById("alertPresetsGrid").hidden = false;
+  document.getElementById("presetsMessage").textContent = "";
+  loadPresets();                    // discard edits, reload from server
+});
+
+document.getElementById("addPresetBtn").addEventListener("click", () => {
+  collectPresetInputs();
+  currentPresets.push({ label: "", message: "" });
+  renderPresetEditor();
+});
+
+document.getElementById("savePresetsBtn").addEventListener("click", async () => {
+  collectPresetInputs();
+  const presets = currentPresets.filter(p => p.label && p.message);
+  const msg = document.getElementById("presetsMessage");
+  const res = await apiFetch("/api/config", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ alertPresets: presets }),
+  });
+  if (!res) return;
+  if (res.ok) {
+    const cfg = await res.json();
+    currentPresets = Array.isArray(cfg.alertPresets) ? cfg.alertPresets : presets;
+    renderPresets();
+    document.getElementById("alertPresetsEditor").hidden = true;
+    document.getElementById("alertPresetsGrid").hidden = false;
+    msg.textContent = "Presets saved.";
+  } else {
+    msg.textContent = "Could not save presets.";
+  }
 });
 
 document.getElementById("clearAlertBtn").addEventListener("click", async () => {
@@ -950,6 +1064,7 @@ async function fetchHealth() {
 loadFiles();
 updateNowShowing();
 loadAlert();
+loadPresets();
 loadSchedule();
 loadQrConfig();
 fetchHealth();
