@@ -260,6 +260,53 @@ sendHeartbeat();
 setInterval(sendHeartbeat, 2 * 60 * 1000);
 
 /*
+  setDisplayPower — turns the Pi's HDMI output on or off.
+
+  We originally used `vcgencmd display_power`, but it is a no-op on Raspberry
+  Pi OS Bookworm (the corridor Pi), where the labwc Wayland compositor owns
+  the display — so the TV never switched off. On Wayland the output is
+  controlled with wlr-randr instead. The catch: this server runs as a systemd
+  service with no graphical environment, so we point it at the admin user's
+  Wayland session (XDG_RUNTIME_DIR + WAYLAND_DISPLAY) for wlr-randr to
+  connect. The HDMI output name varies (e.g. HDMI-A-1), so we discover it at
+  runtime rather than hard-coding it. vcgencmd is kept as a last-resort
+  fallback for older, non-Wayland setups.
+*/
+function setDisplayPower(on) {
+  const uid = typeof process.getuid === "function" ? process.getuid() : null;
+  const runtimeDir = uid != null ? `/run/user/${uid}` : null;
+
+  let waylandDisplay = null;
+  try {
+    if (runtimeDir) {
+      waylandDisplay = fs.readdirSync(runtimeDir).find(f => /^wayland-\d+$/.test(f)) || null;
+    }
+  } catch {}
+
+  // No Wayland session found — fall back to the legacy firmware command.
+  if (!waylandDisplay) {
+    exec(`vcgencmd display_power ${on ? 1 : 0}`);
+    return;
+  }
+
+  const env = { ...process.env, XDG_RUNTIME_DIR: runtimeDir, WAYLAND_DISPLAY: waylandDisplay };
+
+  // List outputs, then switch each one on/off. wlr-randr prints each output's
+  // name at the start of a non-indented line (e.g. `HDMI-A-1 "Samsung"`).
+  exec("wlr-randr", { env }, (err, stdout) => {
+    if (err) { exec(`vcgencmd display_power ${on ? 1 : 0}`); return; }
+    const outputs = stdout.split("\n")
+      .filter(line => line && !/^\s/.test(line))
+      .map(line => line.split(" ")[0])
+      .filter(Boolean);
+    for (const name of outputs) {
+      exec(`wlr-randr --output ${name} --${on ? "on" : "off"}`, { env });
+    }
+    console.log(`[screen] display ${on ? "on" : "off"} via wlr-randr (${outputs.join(", ") || "no outputs"})`);
+  });
+}
+
+/*
   applyScreenSchedule — turns the Pi's HDMI output on or off based on the
   configured schedule. This is idempotent: every run it works out whether
   the current time falls inside the on-window and sets the display to match,
@@ -267,9 +314,6 @@ setInterval(sendHeartbeat, 2 * 60 * 1000);
   approach failed because setInterval drifts and could skip the precise
   on/off minute, leaving the screen stuck on overnight. Re-applying the
   correct state every minute is harmless and self-correcting.
-
-  Only has any effect on the Pi where vcgencmd is available; on the VM the
-  command simply fails silently.
 */
 function applyScreenSchedule() {
   const config = loadConfig();
@@ -279,7 +323,7 @@ function applyScreenSchedule() {
   const on  = config.screenOnTime;
   const off = config.screenOffTime;
   const inWindow = on < off ? (hhmm >= on && hhmm < off) : (hhmm >= on || hhmm < off);
-  exec(`vcgencmd display_power ${inWindow ? 1 : 0}`);
+  setDisplayPower(inWindow);
 }
 
 // Apply immediately on startup (so a reboot during/outside hours is correct
