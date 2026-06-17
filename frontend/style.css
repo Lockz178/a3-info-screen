@@ -1439,15 +1439,20 @@ input[type="range"] {
   transform: translateY(-50%) scale(0.9);
 }
 
-/* Quick pop when toggling password visibility. */
-@keyframes eye-pop {
-  0%   { transform: scale(0.5); opacity: 0.3; }
-  60%  { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 1; }
+.login-eye svg {
+  transform-origin: center;
+}
+
+/* Eyelid-opening effect: the icon lifts open from a thin slit, like a real
+   eye opening, each time the visibility is toggled. */
+@keyframes eye-lid-open {
+  0%   { transform: scaleY(0.05); opacity: 0.4; }
+  55%  { transform: scaleY(1.12); }
+  100% { transform: scaleY(1); opacity: 1; }
 }
 
 .login-eye .eye-anim {
-  animation: eye-pop 0.25s ease;
+  animation: eye-lid-open 0.28s ease-out;
 }
 
 /* Caps Lock warning shown below the password field. */
