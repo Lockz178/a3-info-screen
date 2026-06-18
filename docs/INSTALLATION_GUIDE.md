@@ -48,6 +48,19 @@ If prompted for credentials, use your TAMK GitLab username and a personal access
 npm install
 ```
 
+Also install the display-control tools the screen schedule uses to turn the TV
+off and on. No single command works on every TV/monitor, so the schedule tries
+several and the display obeys whichever it supports:
+
+```bash
+sudo apt install -y cec-utils wlopm
+```
+
+- `cec-utils` — HDMI-CEC, puts a real TV into standby (Samsung Anynet+, LG SimpLink, etc.)
+- `wlopm` — Wayland display power (DPMS), blanks the output on the Pi's labwc desktop
+
+If you skip these, the slideshow still works but the scheduled off-time may not blank the screen.
+
 ### 5. Create the systemd service
 
 This makes the server start automatically on boot and restart if it crashes.
@@ -277,4 +290,6 @@ Each VM has its own dashboard and its own uploads folder. Teachers manage each s
 | Chromium not opening on boot | Check `~/.config/autostart/chromium-kiosk.desktop` exists |
 | Dashboard not reachable on VM | Check nginx: `sudo systemctl status nginx` |
 | Pi not syncing from VM | Check VM_SYNC_URL in the systemd service file |
+| TV not turning off at the scheduled time | Make sure `cec-utils` and `wlopm` are installed (step 4). Test by hand: `echo 'standby 0' \| cec-client -s -d 1` (TV should go dark). |
+| TV turns itself back on after going off | The TV is auto-waking from the still-active HDMI source. The service avoids this by also cutting the signal with `wlopm`; if it still wakes, disable auto-power-on in the TV menu (Samsung: Settings → General → External Device Manager → Anynet+ HDMI-CEC). |
 | GitLab personal access token expired | Create a new token at gitlab.tamk.cloud → Profile → Access Tokens (scope: `read_repository`) and update the remote URL on the Pi |
