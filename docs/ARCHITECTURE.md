@@ -63,7 +63,7 @@ The system has two main components: a **VM** that hosts the dashboard for conten
 - Syncs content and config from the VM every 5 minutes — downloads new files, removes deleted ones, and overwrites local `config.json` with the VM's version so settings like screen schedule take effect automatically
 - Sends a heartbeat to the VM every 2 minutes so the health panel can show Pi status
 - If the VM is unreachable, the Pi keeps showing its last known local content
-- Keeps the HDMI output on during the scheduled window and off outside it using `vcgencmd display_power`, re-applying the correct state every minute so a missed on/off minute can't leave the screen stuck
+- Keeps the display on during the scheduled window and off outside it, re-applying the correct state every minute so a missed on/off minute can't leave the screen stuck. Because no single command works on every TV/monitor, it fires all known methods each time and the display obeys whichever it supports: HDMI-CEC (`cec-client`, for real TVs), `wlopm` (Wayland DPMS), `wlr-randr` (Wayland output), and `vcgencmd` (legacy firmware)
 
 ### Dashboard
 - Single-page web app served by the Node.js server

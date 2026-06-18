@@ -269,19 +269,36 @@ sendHeartbeat();
 setInterval(sendHeartbeat, 2 * 60 * 1000);
 
 /*
-  setDisplayPower — turns the Pi's HDMI output on or off.
+  setDisplayPower — turns the connected display on or off.
 
-  We originally used `vcgencmd display_power`, but it is a no-op on Raspberry
-  Pi OS Bookworm (the corridor Pi), where the labwc Wayland compositor owns
-  the display — so the TV never switched off. On Wayland the output is
-  controlled with wlr-randr instead. The catch: this server runs as a systemd
-  service with no graphical environment, so we point it at the admin user's
-  Wayland session (XDG_RUNTIME_DIR + WAYLAND_DISPLAY) for wlr-randr to
-  connect. The HDMI output name varies (e.g. HDMI-A-1), so we discover it at
-  runtime rather than hard-coding it. vcgencmd is kept as a last-resort
-  fallback for older, non-Wayland setups.
+  There is NO single command that works on every TV/monitor, so we don't pick
+  one — we fire every known method and let the display obey whichever protocol
+  it supports. Each command is idempotent, so the ones a given display ignores
+  are harmless no-ops (the same self-correcting idea as re-applying every
+  minute). This is what makes the schedule portable across different corridor
+  TVs and monitors without per-site configuration.
+
+  Methods, in order:
+    1. HDMI-CEC (`cec-client`) — tells the TV itself to stand by / wake. Works
+       on most real TVs regardless of compositor (Samsung Anynet+, LG SimpLink,
+       Sony Bravia Sync, …). This is the one that handles actual TVs, which is
+       why `vcgencmd`/`wlr-randr` alone failed on the corridor Samsung.
+    2. wlopm — Wayland output power-management (DPMS). labwc honours this even
+       when it refuses wlr-randr's full output disable. Good for plain monitors.
+    3. wlr-randr — Wayland output-management (enable/disable the output).
+    4. vcgencmd — legacy firmware command for older, non-Wayland Pi OS.
+
+  The Wayland methods (2 & 3) need a graphical session, but this server runs as
+  a headless systemd service, so we point them at the admin user's Wayland
+  session (XDG_RUNTIME_DIR + WAYLAND_DISPLAY). The output name varies
+  (e.g. HDMI-A-1), so we discover it at runtime. All errors are ignored on
+  purpose — a method that isn't installed or isn't supported just falls through.
 */
 function setDisplayPower(on) {
+  // 1. HDMI-CEC — drive the TV directly. Logical address 0 is always the TV,
+  // so this works on any CEC-capable set without knowing the output name.
+  exec(`echo '${on ? "on 0" : "standby 0"}' | cec-client -s -d 1`);
+
   const uid = typeof process.getuid === "function" ? process.getuid() : null;
   const runtimeDir = uid != null ? `/run/user/${uid}` : null;
 
@@ -292,7 +309,8 @@ function setDisplayPower(on) {
     }
   } catch {}
 
-  // No Wayland session found — fall back to the legacy firmware command.
+  // No Wayland session — CEC above plus the legacy firmware command is all we
+  // can do (covers TVs and pre-Wayland Pi OS).
   if (!waylandDisplay) {
     exec(`vcgencmd display_power ${on ? 1 : 0}`);
     return;
@@ -300,8 +318,10 @@ function setDisplayPower(on) {
 
   const env = { ...process.env, XDG_RUNTIME_DIR: runtimeDir, WAYLAND_DISPLAY: waylandDisplay };
 
-  // List outputs, then switch each one on/off. wlr-randr prints each output's
-  // name at the start of a non-indented line (e.g. `HDMI-A-1 "Samsung"`).
+  // Discover the output name(s), then drive BOTH Wayland protocols for each —
+  // power-management (wlopm) and output-management (wlr-randr) — since different
+  // compositors honour different ones. wlr-randr prints each output's name at
+  // the start of a non-indented line (e.g. `HDMI-A-1 "Samsung"`).
   exec("wlr-randr", { env }, (err, stdout) => {
     if (err) { exec(`vcgencmd display_power ${on ? 1 : 0}`); return; }
     const outputs = stdout.split("\n")
@@ -309,9 +329,10 @@ function setDisplayPower(on) {
       .map(line => line.split(" ")[0])
       .filter(Boolean);
     for (const name of outputs) {
+      exec(`wlopm --${on ? "on" : "off"} ${name}`, { env });
       exec(`wlr-randr --output ${name} --${on ? "on" : "off"}`, { env });
     }
-    console.log(`[screen] display ${on ? "on" : "off"} via wlr-randr (${outputs.join(", ") || "no outputs"})`);
+    console.log(`[screen] display ${on ? "on" : "off"} via cec+wlopm+wlr-randr (${outputs.join(", ") || "no outputs"})`);
   });
 }
 
